@@ -97,6 +97,9 @@ CLI Input → Analyzer (file traversal, framework detection)
 # Install in development mode with dev dependencies
 pip install -e ".[dev]"
 
+# Set up pre-commit hooks (recommended - auto-formats code before commits)
+pre-commit install
+
 # Install with enhanced REPL features
 pip install -e ".[enhanced]"
 
@@ -125,14 +128,20 @@ pytest -k "test_token"
 ### Code Quality
 
 ```bash
-# Format code with Black
-black src/
+# Recommended: Run all quality checks at once
+make quality
 
-# Check linting with Ruff
-ruff check src/
+# Or use individual commands:
+make format       # Format code with Black
+make lint         # Check and fix linting with Ruff
+make test         # Run tests
+make pre-commit   # Run pre-commit on all files
+make clean        # Clean up cache files
 
-# Fix auto-fixable issues
-ruff check src/ --fix
+# Manual commands (if not using make):
+black src/              # Format code
+ruff check src/ --fix   # Check and fix linting
+pytest                  # Run tests
 ```
 
 ### CLI Commands
@@ -331,17 +340,19 @@ Types:
 - PRs should include description of changes
 - Tests should pass before merge
 
-### Pre-commit Checks (Manual)
-Before committing, run all checks:
-```bash
-black src/ && ruff check src/ --fix && pytest
-```
+### Pre-commit Checks
 
-Or individually:
+**Automatic (Recommended):**
+If you ran `pre-commit install`, checks run automatically before each commit.
+
+**Manual:**
 ```bash
-black src/           # Format code
-ruff check src/ --fix  # Lint and auto-fix
-pytest               # Run tests
+make quality  # Run all checks at once
+
+# Or individually:
+make format   # Format code
+make lint     # Lint and auto-fix
+make test     # Run tests
 ```
 
 ### Python 3.8 Compatibility
@@ -386,6 +397,8 @@ code-guro-output/
 | Update error messages | `src/code_guro/errors.py` |
 | Modify output format | `src/code_guro/generator.py` |
 | Update HTML conversion | `src/code_guro/html_converter.py` |
+| Update pre-commit hooks | `.pre-commit-config.yaml` |
+| Add make commands | `Makefile` |
 
 ### Critical Constants (in utils.py)
 

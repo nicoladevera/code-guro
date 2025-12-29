@@ -12,6 +12,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `code-guro convert` command for adding HTML to markdown-only output
 - Dual-format output by default (HTML + markdown in organized subdirectories)
 - `--markdown-only` flag for analyze command to generate only markdown
+- Pre-commit hooks configuration (`.pre-commit-config.yaml`) for automatic code formatting
+- Makefile with convenient commands (`make quality`, `make format`, `make lint`, `make test`)
+- Pre-commit as development dependency for automated quality checks
 
 ### Changed
 - **Breaking**: `code-guro analyze` now generates both HTML and markdown by default, organized in `html/` and `markdown/` subdirectories

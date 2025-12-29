@@ -16,34 +16,58 @@ Thank you for your interest in contributing to Code Guro!
    source venv/bin/activate  # On Windows: venv\Scripts\activate
    ```
 
-3. Install in development mode:
+3. Install in development mode with dev dependencies:
    ```bash
    pip install -e ".[dev]"
    ```
 
-4. Run tests:
+4. Set up pre-commit hooks (recommended):
+   ```bash
+   pre-commit install
+   ```
+
+   This will automatically run Black and Ruff before each commit, preventing formatting issues.
+
+5. Run tests:
    ```bash
    pytest
    ```
 
 ## Code Style
 
-We use Black for formatting and Ruff for linting. **Always run these before committing:**
+We use Black for formatting and Ruff for linting.
+
+### Automatic Checks (Recommended)
+
+If you installed pre-commit hooks (step 4 above), these checks will run automatically before each commit:
+- Black formatting
+- Ruff linting
+- Trailing whitespace removal
+- File ending fixes
+
+### Manual Checks
+
+If you prefer to run checks manually:
 
 ```bash
-# Format code
-black src/
+# Quick way - using Makefile
+make quality
 
-# Check for linting errors (auto-fix where possible)
-ruff check src/ --fix
-
-# Run tests
-pytest
+# Or run checks individually:
+black src/              # Format code
+ruff check src/ --fix   # Lint and auto-fix
+pytest                  # Run tests
 ```
 
-Or run all checks at once:
+### Other Useful Make Commands
+
 ```bash
-black src/ && ruff check src/ --fix && pytest
+make help         # Show all available commands
+make format       # Format code only
+make lint         # Lint code only
+make test         # Run tests only
+make pre-commit   # Run pre-commit on all files
+make clean        # Clean up cache files
 ```
 
 ### Python Version Compatibility
@@ -63,12 +87,14 @@ We support Python 3.8+. Keep these guidelines in mind:
 
 2. Make your changes and add tests
 
-3. **Run the pre-commit checklist:**
+3. **Quality checks will run automatically** when you commit (if you set up pre-commit hooks)
+
+   Or run manually:
    ```bash
-   black src/ && ruff check src/ --fix && pytest
+   make quality
    ```
 
-4. Commit with a descriptive message
+4. Commit with a descriptive message (hooks will auto-format your code)
 
 5. Push and create a Pull Request
 
