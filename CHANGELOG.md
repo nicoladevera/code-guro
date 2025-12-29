@@ -15,6 +15,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Pre-commit hooks configuration (`.pre-commit-config.yaml`) for automatic code formatting
 - Makefile with convenient commands (`make quality`, `make format`, `make lint`, `make test`)
 - Pre-commit as development dependency for automated quality checks
+- Comprehensive test suite for dual-format output feature (51 new tests, 84% coverage)
+- Test infrastructure with shared fixtures and mocked API calls for fast, offline testing
 
 ### Changed
 - **Breaking**: `code-guro analyze` now generates both HTML and markdown by default, organized in `html/` and `markdown/` subdirectories

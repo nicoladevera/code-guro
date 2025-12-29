@@ -275,14 +275,31 @@ pip install -e ".[dev]"
 ### Running Tests
 
 ```bash
+# Run all tests
 pytest
+
+# Run with coverage report
+pytest --cov=code_guro --cov-report=term
+
+# Generate detailed HTML coverage report
+pytest --cov=code_guro --cov-report=html
+# Then open htmlcov/index.html in your browser
 ```
+
+**Test Coverage:** 84% (51 tests covering dual-format output, CLI commands, and generators)
+
+All tests use mocked API calls, so they run fast and work offline without requiring API keys.
 
 ### Code Quality
 
 Before committing, run all checks:
 ```bash
 black src/ && ruff check src/ --fix && pytest
+```
+
+Or use the Makefile for convenience:
+```bash
+make quality  # Run all checks
 ```
 
 ## License

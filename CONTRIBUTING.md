@@ -33,6 +33,13 @@ Thank you for your interest in contributing to Code Guro!
    pytest
    ```
 
+6. Check test coverage (optional):
+   ```bash
+   pytest --cov=code_guro --cov-report=term --cov-report=html
+   ```
+
+   This will generate a coverage report in `htmlcov/index.html`.
+
 ## Code Style
 
 We use Black for formatting and Ruff for linting.
@@ -97,6 +104,47 @@ We support Python 3.8+. Keep these guidelines in mind:
 4. Commit with a descriptive message (hooks will auto-format your code)
 
 5. Push and create a Pull Request
+
+## Test Coverage
+
+We maintain high test coverage to ensure code quality and catch regressions early.
+
+**Coverage Requirements:**
+- **Target:** 80%+ overall coverage for production code
+- **Minimum:** 60% coverage for new features
+- **Critical modules:** 90%+ coverage for core functionality (generators, converters)
+
+**Current Coverage:** 84% (51 tests across dual-format output, CLI commands, and generators)
+
+**Running Coverage Reports:**
+
+```bash
+# Terminal report
+pytest --cov=code_guro --cov-report=term
+
+# HTML report (detailed, line-by-line)
+pytest --cov=code_guro --cov-report=html
+open htmlcov/index.html
+```
+
+**Writing Tests:**
+- Place test files alongside the code they test (e.g., `cli.py` → `cli_test.py`)
+- Use pytest fixtures from `conftest.py` for shared test infrastructure
+- Mock external API calls (Claude API, GitHub, etc.) to keep tests fast and offline
+- Use `tmp_path` fixture for file system tests to ensure isolation
+- Write descriptive test names: `test_analyze_default_creates_dual_format`
+
+**Test Organization:**
+```
+src/code_guro/
+├── cli.py                    # Production code
+├── cli_test.py               # Tests for cli.py
+├── generator.py              # Production code
+├── generator_test.py         # Tests for generator.py
+├── html_converter.py         # Production code
+├── html_converter_test.py    # Tests for html_converter.py
+└── conftest.py               # Shared fixtures and test utilities
+```
 
 ## Release Process
 
