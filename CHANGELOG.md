@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.2.0] - 2025-12-29
+
 ### Added
 - Chunked analysis for large codebases (>150K tokens)
 - `code-guro convert` command for adding HTML to markdown-only output
@@ -38,5 +40,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Cost estimation with confirmation for large codebases
 - Secure API key storage in `~/.config/code-guro/`
 
-[Unreleased]: https://github.com/nicoladevera/code-guro/compare/v0.1.0...HEAD
+[Unreleased]: https://github.com/nicoladevera/code-guro/compare/v0.2.0...HEAD
+[0.2.0]: https://github.com/nicoladevera/code-guro/compare/v0.1.0...v0.2.0
 [0.1.0]: https://github.com/nicoladevera/code-guro/releases/tag/v0.1.0
