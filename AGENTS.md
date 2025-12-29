@@ -127,6 +127,7 @@ pytest -k "test_token"
 
 ### Code Quality
 
+**ALWAYS run before committing**:
 ```bash
 # Recommended: Run all quality checks at once
 make quality
@@ -143,6 +144,13 @@ black src/              # Format code
 ruff check src/ --fix   # Check and fix linting
 pytest                  # Run tests
 ```
+
+**Pre-commit hooks**: If installed (`pre-commit install`), these checks run automatically before each commit and will:
+- Auto-format code with Black
+- Auto-fix import sorting and remove unused imports with Ruff
+- Prevent commits if tests fail or linting errors remain
+
+**CI/CD**: GitHub Actions runs the same checks on every push. If you skip pre-commit hooks, the CI will catch issues.
 
 ### CLI Commands
 
@@ -220,8 +228,9 @@ class TestTokenCounting:
 ### Formatting (Black + Ruff)
 - **Line length**: 100 characters
 - **Target Python**: 3.8+
-- **Ruff rules enabled**: E (pycodestyle), F (pyflakes), W (whitespace), I (isort), UP (upgrades), B (bugbear), C4 (comprehensions)
+- **Ruff rules enabled**: E (pycodestyle), F (pyflakes), W (whitespace), I (isort), B (bugbear), C4 (comprehensions)
 - **Ignored**: E501 (line too long - handled by Black)
+- **Note**: UP (upgrades) rule is NOT enabled to maintain Python 3.8 compatibility (e.g., use `Optional[str]` not `str | None`)
 
 ### Naming Conventions
 
@@ -256,9 +265,27 @@ def analyze_codebase(path: str, max_files: int = 500) -> AnalysisResult:
 ```
 
 ### Import Organization
-1. Standard library imports
-2. Third-party imports (click, rich, anthropic)
-3. Local imports (relative or absolute)
+**CRITICAL**: Ruff enforces import sorting (I rule). Always organize imports as follows:
+
+1. **Standard library imports** (e.g., `from pathlib import Path`)
+2. **Third-party imports** (e.g., `import pytest`, `from click.testing import CliRunner`)
+3. **Local imports** (e.g., `from code_guro.cli import main`)
+
+**Blank lines**: One blank line between each group, no blank lines within a group.
+
+**Example**:
+```python
+from pathlib import Path
+from unittest.mock import Mock
+
+import pytest
+from click.testing import CliRunner
+
+from code_guro.analyzer import AnalysisResult
+from code_guro.cli import main
+```
+
+**Before committing**: Run `make quality` or `pre-commit run --all-files` to auto-fix import sorting.
 
 ### Error Handling Pattern
 - Custom exception hierarchy with `CodeGuroError` base class
@@ -356,10 +383,27 @@ make test     # Run tests
 ```
 
 ### Python 3.8 Compatibility
-Since we target Python 3.8+, avoid:
-- `list[str]`, `dict[str, int]` → use `List[str]`, `Dict[str, int]` from `typing`
-- `str | None` → use `Optional[str]` from `typing`
-- Or add `from __future__ import annotations` at file top to enable modern syntax
+**CRITICAL**: Since we target Python 3.8+, you MUST:
+- Use `List[str]`, `Dict[str, int]` from `typing` (NOT `list[str]`, `dict[str, int]`)
+- Use `Optional[str]` from `typing` (NOT `str | None`)
+- Avoid modern type union syntax (`X | Y`) - use `Union[X, Y]` instead
+
+**Why**: Python 3.8 doesn't support PEP 604 union syntax (`X | None`) or PEP 585 generic syntax (`list[str]`).
+
+**Example**:
+```python
+from typing import Optional, List, Dict
+
+def get_api_key() -> Optional[str]:  # ✅ Correct
+    pass
+
+def get_files() -> List[str]:  # ✅ Correct
+    pass
+
+# ❌ WRONG (requires Python 3.10+)
+# def get_api_key() -> str | None:
+# def get_files() -> list[str]:
+```
 
 ### .gitignore Categories
 ```
@@ -380,6 +424,73 @@ build/, dist/, *.egg-info/
 
 # Project-specific
 code-guro-output/
+```
+
+---
+
+## 8. Common Linting Issues & Solutions
+
+### I001: Import block is un-sorted or un-formatted
+
+**Problem**: Imports are not organized correctly.
+
+**Solution**: Run `ruff check src/ --fix` to auto-fix, or organize manually:
+```python
+# ✅ Correct order
+from pathlib import Path
+from unittest.mock import Mock
+
+import pytest
+from click.testing import CliRunner
+
+from code_guro.cli import main
+```
+
+### F401: Imported but unused
+
+**Problem**: You imported something but never used it.
+
+**Solution**: Remove the unused import, or if you need it later, add `# noqa: F401` comment:
+```python
+from typing import Optional  # noqa: F401  # Used in type comments
+```
+
+### F811: Redefinition of unused variable
+
+**Problem**: You imported something at the top, then imported it again locally.
+
+**Solution**: Remove the duplicate import. Use the top-level import instead:
+```python
+# ❌ Bad
+from code_guro.analyzer import AnalysisResult  # Top of file
+
+def test_something():
+    from code_guro.analyzer import AnalysisResult  # Duplicate!
+
+# ✅ Good
+from code_guro.analyzer import AnalysisResult  # Top of file
+
+def test_something():
+    result = AnalysisResult(...)  # Use the top-level import
+```
+
+### E501: Line too long
+
+**Problem**: Line exceeds 100 characters.
+
+**Solution**: Black handles this automatically. Run `black src/` to fix.
+
+### Quick Fix Commands
+
+```bash
+# Fix all auto-fixable issues
+ruff check src/ --fix
+
+# Format all code
+black src/
+
+# Run everything
+make quality
 ```
 
 ---

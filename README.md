@@ -292,15 +292,33 @@ All tests use mocked API calls, so they run fast and work offline without requir
 
 ### Code Quality
 
-Before committing, run all checks:
+**IMPORTANT**: Always run quality checks before committing to prevent CI failures:
+
 ```bash
-black src/ && ruff check src/ --fix && pytest
+# Recommended: Run all checks at once
+make quality
+
+# Or run individually:
+black src/                # Format code
+ruff check src/ --fix     # Fix linting issues
+pytest                    # Run tests
 ```
 
-Or use the Makefile for convenience:
+**Pre-commit hooks** (recommended):
 ```bash
-make quality  # Run all checks
+# Install pre-commit hooks (one-time setup)
+pre-commit install
+
+# Now checks run automatically before each commit
+# To run manually on all files:
+pre-commit run --all-files
 ```
+
+The pre-commit hooks will:
+- Auto-format code with Black (100 char line length)
+- Auto-fix import sorting and remove unused imports
+- Run Ruff linter with auto-fix
+- Prevent commits if issues remain
 
 ## License
 
