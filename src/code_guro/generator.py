@@ -16,12 +16,16 @@ from code_guro.config import get_api_key
 from code_guro.frameworks import get_framework_context
 from code_guro.prompts import (
     ARCHITECTURE_PROMPT,
+    CHUNK_ANALYSIS_PROMPT,
     CORE_FILES_PROMPT,
     DEEP_DIVE_PROMPT,
     NEXT_STEPS_PROMPT,
     ORIENTATION_PROMPT,
     OVERVIEW_PROMPT,
     QUALITY_PROMPT,
+    SYNTHESIS_ARCHITECTURE_PROMPT,
+    SYNTHESIS_CORE_FILES_PROMPT,
+    SYNTHESIS_OVERVIEW_PROMPT,
     SYSTEM_PROMPT,
 )
 
@@ -128,6 +132,272 @@ def call_claude(prompt: str, system: str = SYSTEM_PROMPT) -> str:
     )
 
     return message.content[0].text
+
+
+# ============================================================================
+# Chunked Analysis Functions
+# ============================================================================
+
+
+def analyze_chunk(
+    chunk: List[FileInfo],
+    chunk_number: int,
+    total_chunks: int,
+    frameworks: List,
+) -> str:
+    """Analyze a single chunk of files.
+
+    Args:
+        chunk: List of files in this chunk
+        chunk_number: Current chunk number (1-indexed)
+        total_chunks: Total number of chunks
+        frameworks: Detected frameworks
+
+    Returns:
+        Analysis text for this chunk
+    """
+    # Get unique directories in this chunk
+    directories = set()
+    for f in chunk:
+        parts = f.relative_path.split("/")
+        if len(parts) > 1:
+            directories.add(parts[0])
+
+    framework_context = get_framework_context(frameworks) or "No specific framework detected"
+
+    prompt = CHUNK_ANALYSIS_PROMPT.format(
+        chunk_number=chunk_number,
+        total_chunks=total_chunks,
+        file_count=len(chunk),
+        directories=", ".join(sorted(directories)) or "(root level files)",
+        framework_context=framework_context,
+        chunk_files=format_file_content(chunk, max_tokens=100000),
+    )
+
+    return call_claude(prompt)
+
+
+def synthesize_overview(
+    chunk_analyses: List[str],
+    result: AnalysisResult,
+) -> str:
+    """Synthesize chunk analyses into a cohesive overview.
+
+    Args:
+        chunk_analyses: List of analysis texts from each chunk
+        result: Original analysis result
+
+    Returns:
+        Synthesized overview document
+    """
+    framework_names = ", ".join(f.name for f in result.frameworks) or "None detected"
+
+    # Format chunk analyses
+    analyses_text = ""
+    for i, analysis in enumerate(chunk_analyses, 1):
+        analyses_text += f"\n### Chunk {i} Analysis\n\n{analysis}\n\n---\n"
+
+    prompt = SYNTHESIS_OVERVIEW_PROMPT.format(
+        root=result.root.name,
+        file_count=len(result.files),
+        chunk_count=len(chunk_analyses),
+        frameworks=framework_names,
+        chunk_analyses=analyses_text,
+    )
+
+    return call_claude(prompt)
+
+
+def synthesize_architecture(
+    chunk_analyses: List[str],
+    result: AnalysisResult,
+) -> str:
+    """Synthesize chunk analyses into architecture document.
+
+    Args:
+        chunk_analyses: List of analysis texts from each chunk
+        result: Original analysis result
+
+    Returns:
+        Synthesized architecture document
+    """
+    framework_names = ", ".join(f.name for f in result.frameworks) or "None detected"
+
+    analyses_text = ""
+    for i, analysis in enumerate(chunk_analyses, 1):
+        analyses_text += f"\n### Chunk {i} Analysis\n\n{analysis}\n\n---\n"
+
+    prompt = SYNTHESIS_ARCHITECTURE_PROMPT.format(
+        frameworks=framework_names,
+        chunk_count=len(chunk_analyses),
+        chunk_analyses=analyses_text,
+    )
+
+    return call_claude(prompt)
+
+
+def synthesize_core_files(
+    chunk_analyses: List[str],
+    result: AnalysisResult,
+) -> str:
+    """Synthesize chunk analyses into core files document.
+
+    Args:
+        chunk_analyses: List of analysis texts from each chunk
+        result: Original analysis result
+
+    Returns:
+        Synthesized core files document
+    """
+    framework_names = ", ".join(f.name for f in result.frameworks) or "None detected"
+
+    # Get critical files summary
+    critical_files = get_critical_files(result, limit=30)
+    critical_summary = "\n".join(
+        f"- `{f.relative_path}` ({f.tokens} tokens, {'entry point' if f.is_entry_point else 'config' if f.is_config else 'source'})"
+        for f in critical_files
+    )
+
+    analyses_text = ""
+    for i, analysis in enumerate(chunk_analyses, 1):
+        analyses_text += f"\n### Chunk {i} Analysis\n\n{analysis}\n\n---\n"
+
+    prompt = SYNTHESIS_CORE_FILES_PROMPT.format(
+        file_count=len(result.files),
+        chunk_count=len(chunk_analyses),
+        frameworks=framework_names,
+        chunk_analyses=analyses_text,
+        critical_files_summary=critical_summary,
+    )
+
+    return call_claude(prompt)
+
+
+def generate_chunked_documentation(
+    result: AnalysisResult,
+    output_dir: Path,
+) -> List[str]:
+    """Generate documentation using chunked analysis.
+
+    Args:
+        result: Analysis result with needs_chunking=True
+        output_dir: Output directory for documentation
+
+    Returns:
+        List of generated filenames
+    """
+    console.print()
+    console.print(
+        f"[yellow]Large codebase detected ({result.total_tokens:,} tokens).[/yellow]"
+    )
+    console.print(
+        f"[dim]Analyzing in {result.chunk_count} chunks for better results...[/dim]"
+    )
+    console.print()
+
+    # Create chunks
+    chunks = chunk_files(result.files)
+    chunk_analyses: List[str] = []
+
+    with Progress(
+        SpinnerColumn(),
+        TextColumn("[progress.description]{task.description}"),
+        BarColumn(),
+        TaskProgressColumn(),
+        console=console,
+    ) as progress:
+        # Phase 1: Analyze each chunk
+        task = progress.add_task(
+            "Analyzing chunks...",
+            total=len(chunks) + 3,  # chunks + synthesis steps
+        )
+
+        for i, chunk in enumerate(chunks, 1):
+            progress.update(task, description=f"Analyzing chunk {i} of {len(chunks)}...")
+            analysis = analyze_chunk(chunk, i, len(chunks), result.frameworks)
+            chunk_analyses.append(analysis)
+
+            # Save individual chunk analysis for reference
+            chunk_path = output_dir / f"_chunk-{i:02d}-analysis.md"
+            chunk_path.write_text(f"# Chunk {i} Analysis\n\n{analysis}")
+
+            progress.advance(task)
+
+        # Phase 2: Synthesize documents
+        progress.update(task, description="Synthesizing overview...")
+        overview = synthesize_overview(chunk_analyses, result)
+        (output_dir / "00-overview.md").write_text(overview)
+        progress.advance(task)
+
+        progress.update(task, description="Synthesizing architecture...")
+        architecture = synthesize_architecture(chunk_analyses, result)
+        (output_dir / "02-architecture.md").write_text(architecture)
+        progress.advance(task)
+
+        progress.update(task, description="Synthesizing core files...")
+        core_files = synthesize_core_files(chunk_analyses, result)
+        (output_dir / "03-core-files.md").write_text(core_files)
+        progress.advance(task)
+
+    # Generate remaining documents with standard approach
+    # (these don't need full codebase context)
+    console.print("[dim]Generating additional documentation...[/dim]")
+
+    orientation = generate_orientation(result)
+    (output_dir / "01-getting-oriented.md").write_text(orientation)
+
+    quality = generate_quality_analysis(result)
+    (output_dir / "05-quality-analysis.md").write_text(quality)
+
+    next_steps = generate_next_steps(result)
+    (output_dir / "06-next-steps.md").write_text(next_steps)
+
+    # Add a note about chunked analysis
+    note_content = f"""# Analysis Notes
+
+This codebase was analyzed using chunked analysis due to its size.
+
+## Analysis Details
+- **Total files:** {len(result.files)}
+- **Total tokens:** {result.total_tokens:,}
+- **Chunks used:** {len(chunks)}
+
+## What This Means
+
+Because the codebase was too large to analyze in a single pass, it was divided
+into {len(chunks)} logical chunks based on directory structure. Each chunk was analyzed
+separately, and then the results were synthesized into cohesive documentation.
+
+### Implications
+
+1. **Cross-module relationships** may be less detailed than in smaller codebases
+2. **Some connections** between distant parts of the codebase may not be captured
+3. For deeper understanding of specific areas, use `code-guro explain <path> --interactive`
+
+## Chunk Breakdown
+
+The following chunks were analyzed:
+"""
+    for i, chunk in enumerate(chunks, 1):
+        dirs = set(f.relative_path.split("/")[0] for f in chunk if "/" in f.relative_path)
+        note_content += f"\n### Chunk {i}\n- Files: {len(chunk)}\n- Directories: {', '.join(sorted(dirs)) or '(root)'}\n"
+
+    (output_dir / "_analysis-notes.md").write_text(note_content)
+
+    return [
+        "00-overview.md",
+        "01-getting-oriented.md",
+        "02-architecture.md",
+        "03-core-files.md",
+        "05-quality-analysis.md",
+        "06-next-steps.md",
+        "_analysis-notes.md",
+    ]
+
+
+# ============================================================================
+# Standard (Non-Chunked) Generation Functions
+# ============================================================================
 
 
 def generate_overview(result: AnalysisResult) -> str:
@@ -359,44 +629,49 @@ def generate_documentation(
     """
     output_dir = create_output_dir(result.root)
 
-    documents = [
-        ("00-overview.md", "Generating overview...", generate_overview),
-        ("01-getting-oriented.md", "Generating orientation guide...", generate_orientation),
-        ("02-architecture.md", "Generating architecture analysis...", generate_architecture),
-        ("03-core-files.md", "Generating core files guide...", generate_core_files),
-        ("05-quality-analysis.md", "Generating quality analysis...", generate_quality_analysis),
-        ("06-next-steps.md", "Generating next steps...", generate_next_steps),
-    ]
+    # Use chunked analysis for large codebases
+    if result.needs_chunking:
+        generate_chunked_documentation(result, output_dir)
+    else:
+        # Standard (non-chunked) generation
+        documents = [
+            ("00-overview.md", "Generating overview...", generate_overview),
+            ("01-getting-oriented.md", "Generating orientation guide...", generate_orientation),
+            ("02-architecture.md", "Generating architecture analysis...", generate_architecture),
+            ("03-core-files.md", "Generating core files guide...", generate_core_files),
+            ("05-quality-analysis.md", "Generating quality analysis...", generate_quality_analysis),
+            ("06-next-steps.md", "Generating next steps...", generate_next_steps),
+        ]
 
-    with Progress(
-        SpinnerColumn(),
-        TextColumn("[progress.description]{task.description}"),
-        BarColumn(),
-        TaskProgressColumn(),
-        console=console,
-    ) as progress:
-        task = progress.add_task("Generating documentation...", total=len(documents) + 1)
+        with Progress(
+            SpinnerColumn(),
+            TextColumn("[progress.description]{task.description}"),
+            BarColumn(),
+            TaskProgressColumn(),
+            console=console,
+        ) as progress:
+            task = progress.add_task("Generating documentation...", total=len(documents) + 1)
 
-        # Generate main documents
-        for filename, description, generator in documents:
-            progress.update(task, description=description)
-            content = generator(result)
+            # Generate main documents
+            for filename, description, generator in documents:
+                progress.update(task, description=description)
+                content = generator(result)
 
-            filepath = output_dir / filename
-            filepath.write_text(content)
+                filepath = output_dir / filename
+                filepath.write_text(content)
+                progress.advance(task)
+
+            # Generate deep dives for modules
+            progress.update(task, description="Generating module deep dives...")
+            modules = identify_modules(result)
+
+            for i, module in enumerate(modules):
+                content = generate_deep_dive(module, result)
+                filename = f"04-deep-dive-{module['name'].lower().replace(' ', '-')}.md"
+                filepath = output_dir / filename
+                filepath.write_text(content)
+
             progress.advance(task)
-
-        # Generate deep dives for modules
-        progress.update(task, description="Generating module deep dives...")
-        modules = identify_modules(result)
-
-        for i, module in enumerate(modules):
-            content = generate_deep_dive(module, result)
-            filename = f"04-deep-dive-{module['name'].lower().replace(' ', '-')}.md"
-            filepath = output_dir / filename
-            filepath.write_text(content)
-
-        progress.advance(task)
 
     # Convert to HTML if requested
     if output_format == "html":
