@@ -48,7 +48,7 @@ export CLAUDE_API_KEY="your-api-key-here"
 ### 2. Analyze a codebase
 
 ```bash
-# Analyze current directory
+# Analyze current directory (generates both HTML and markdown)
 code-guro analyze .
 
 # Analyze a specific path
@@ -57,8 +57,8 @@ code-guro analyze /path/to/project
 # Analyze from GitHub
 code-guro analyze https://github.com/user/repo
 
-# Generate HTML output (in addition to markdown)
-code-guro analyze . --format html
+# Generate only markdown (no HTML)
+code-guro analyze . --markdown-only
 ```
 
 ### 3. Deep dive into specific files
@@ -76,24 +76,50 @@ code-guro explain ./src/auth --output console
 
 ## Output
 
-Code Guro generates structured learning documentation in a `code-guro-output/` directory:
+By default, Code Guro generates both HTML and markdown documentation in a clean `code-guro-output/` directory:
 
 ```
 code-guro-output/
-├── 00-overview.md           # Executive summary: what the app does, tech stack
-├── 01-getting-oriented.md   # File structure, extensions glossary, entry points
-├── 02-architecture.md       # Patterns, conventions, architectural decisions
-├── 03-core-files.md         # The 20% of files that matter most
-├── 04-deep-dive-[module].md # Deep dives for each major module
-├── 05-quality-analysis.md   # What's good, what's risky, potential pitfalls
-└── 06-next-steps.md         # Suggested exploration paths, follow-up commands
+├── html/
+│   ├── 00-overview.html           # Executive summary: what the app does, tech stack
+│   ├── 01-getting-oriented.html   # File structure, extensions glossary, entry points
+│   ├── 02-architecture.html       # Patterns, conventions, architectural decisions
+│   ├── 03-core-files.html         # The 20% of files that matter most
+│   ├── 04-deep-dive-[module].html # Deep dives for each major module
+│   ├── 05-quality-analysis.html   # What's good, what's risky, potential pitfalls
+│   └── 06-next-steps.html         # Suggested exploration paths, follow-up commands
+└── markdown/
+    ├── 00-overview.md
+    ├── 01-getting-oriented.md
+    ├── 02-architecture.md
+    ├── 03-core-files.md
+    ├── 04-deep-dive-[module].md
+    ├── 05-quality-analysis.md
+    └── 06-next-steps.md
 ```
 
 Each document includes:
 - Beginner-friendly explanations
-- Visual diagrams (Mermaid)
+- Visual diagrams (Mermaid) - **fully rendered in HTML files**; markdown shows code (renders on GitHub/GitLab)
 - Code snippets with inline comments
 - Glossary of technical terms
+
+**Recommended:** Open the HTML files in your browser for the best experience with fully rendered Mermaid diagrams, styling, and navigation.
+
+### Git Integration
+
+Since `code-guro-output/` contains generated documentation that can be recreated at any time, you may want to add it to your `.gitignore`:
+
+```bash
+echo "code-guro-output/" >> .gitignore
+```
+
+However, some users prefer to commit the documentation for:
+- GitHub Pages hosting
+- Team collaboration without requiring API keys
+- Historical reference of code understanding
+
+The choice is yours!
 
 ## Commands
 
@@ -107,16 +133,31 @@ code-guro configure
 
 ### `code-guro analyze <path>`
 
-Analyze a codebase and generate documentation.
+Analyze a codebase and generate documentation. By default, generates both HTML and markdown in organized subdirectories.
 
 ```bash
-code-guro analyze .                    # Current directory
-code-guro analyze /path/to/project     # Specific path
-code-guro analyze https://github.com/user/repo  # GitHub URL
+code-guro analyze .                    # Current directory (both formats)
+code-guro analyze /path/to/project     # Specific path (both formats)
+code-guro analyze https://github.com/user/repo  # GitHub URL (both formats)
+code-guro analyze . --markdown-only    # Only markdown, no HTML
 ```
 
 **Options:**
-- `--format [markdown|html]` - Output format (default: markdown)
+- `--markdown-only` - Generate only markdown files without HTML (default: generates both formats)
+
+### `code-guro convert [output_dir]`
+
+Convert existing markdown-only output to include HTML files. Useful if you previously ran analysis with `--markdown-only` and now want HTML.
+
+```bash
+code-guro convert                      # Convert from default directory (code-guro-output)
+code-guro convert ./code-guro-output   # Convert from specific directory
+```
+
+This command:
+- Moves markdown files into `markdown/` subdirectory
+- Generates HTML files in `html/` subdirectory
+- Preserves the original markdown files
 
 ### `code-guro explain <path>`
 
