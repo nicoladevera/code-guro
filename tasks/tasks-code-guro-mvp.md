@@ -194,10 +194,10 @@ Update the file after completing each sub-task, not just after completing an ent
   - [x] 9.9 Write unit tests for HTML conversion (html_converter_test.py - 17 tests)
   - [ ] 9.10 Write unit tests for REPL session management
   - [x] 9.11 Create `tests/integration/` directory
-  - [ ] 9.12 Write integration test for full analyze workflow (directory → markdown output)
+  - [x] 9.12 Write integration test for full analyze workflow (directory → markdown output)
   - [x] 9.13 Write integration test for analyze with HTML output (cli_test.py covers dual-format workflow)
-  - [ ] 9.14 Write integration test for explain command
-  - [ ] 9.15 Write integration test for configure command flow
+  - [x] 9.14 Write integration test for explain command
+  - [x] 9.15 Write integration test for configure command flow
   - [ ] 9.16 Test cross-platform compatibility (macOS, Linux, Windows path handling)
   - [x] 9.17 Add test coverage reporting with pytest-cov
 
@@ -213,10 +213,10 @@ Update the file after completing each sub-task, not just after completing an ent
   - [x] 10.9 Add troubleshooting section with common issues and solutions
   - [x] 10.10 Add section on cost estimation and confirmation thresholds
   - [x] 10.11 Add section on supported frameworks
-  - [ ] 10.12 Build distribution packages (`python -m build`)
-  - [ ] 10.13 Test installation from built wheel in clean virtual environment
-  - [ ] 10.14 Create account on PyPI if needed
+  - [x] 10.12 Build distribution packages (`python -m build`)
+  - [x] 10.13 Test installation from built wheel in clean virtual environment
+  - [x] 10.14 Create account on PyPI if needed
   - [ ] 10.15 Upload to TestPyPI first for validation (`twine upload --repository testpypi dist/*`)
   - [ ] 10.16 Test installation from TestPyPI
-  - [ ] 10.17 Upload to PyPI (`twine upload dist/*`)
-  - [ ] 10.18 Verify `pip install code-guro` works from PyPI
+  - [x] 10.17 Upload to PyPI (`twine upload dist/*`)
+  - [x] 10.18 Verify `pip install code-guro` works from PyPI
