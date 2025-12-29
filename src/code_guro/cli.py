@@ -68,16 +68,17 @@ def main():
 @main.command()
 @click.argument("path", type=click.Path(exists=False))
 @click.option(
-    "--format",
-    "output_format",
-    type=click.Choice(["markdown", "html"]),
-    default="markdown",
-    help="Output format for documentation (default: markdown)",
+    "--markdown-only",
+    is_flag=True,
+    help="Generate only markdown files (default: generates both HTML and markdown)",
 )
 @require_internet_decorator
 @require_api_key_decorator
-def analyze(path: str, output_format: str):
+def analyze(path: str, markdown_only: bool):
     """Analyze a codebase and generate learning documentation.
+
+    By default, generates both HTML and markdown files organized in subdirectories.
+    HTML files include fully rendered Mermaid diagrams for the best viewing experience.
 
     PATH can be a local directory or a GitHub repository URL.
 
@@ -89,7 +90,7 @@ def analyze(path: str, output_format: str):
 
         code-guro analyze https://github.com/user/repo
 
-        code-guro analyze . --format html
+        code-guro analyze . --markdown-only
     """
     from code_guro.analyzer import analyze_codebase, confirm_analysis
     from code_guro.generator import generate_documentation
@@ -128,23 +129,128 @@ def analyze(path: str, output_format: str):
 
         # Generate documentation
         console.print()
-        output_dir = generate_documentation(result, output_format)
+        output_dir = generate_documentation(result, markdown_only=markdown_only)
 
         # Print summary
         console.print()
         console.print("[bold green]Analysis complete![/bold green]")
         console.print()
-        console.print("Generated documentation:")
-        for f in sorted(output_dir.glob("*.md")):
-            console.print(f"  [cyan]{f.name}[/cyan]")
-        if output_format == "html":
-            for f in sorted(output_dir.glob("*.html")):
+
+        if markdown_only:
+            console.print("Generated documentation:")
+            for f in sorted(output_dir.glob("*.md")):
                 console.print(f"  [cyan]{f.name}[/cyan]")
+            console.print()
+            console.print(f"[dim]Open {output_dir}/00-overview.md to start learning![/dim]")
+        else:
+            # Both formats generated in subdirectories
+            markdown_dir = output_dir / "markdown"
+            html_dir = output_dir / "html"
+
+            md_files = sorted(markdown_dir.glob("*.md"))
+            html_files = sorted(html_dir.glob("*.html"))
+
+            console.print("Directory structure:")
+            console.print(f"  [cyan]{output_dir.name}/[/cyan]")
+            console.print(f"    [cyan]markdown/[/cyan] ({len(md_files)} files)")
+            console.print(f"    [cyan]html/[/cyan] ({len(html_files)} files)")
+            console.print()
+            console.print(f"[dim]Open {html_dir}/00-overview.html in your browser for the best experience![/dim]")
+
         console.print()
-        console.print(f"[dim]Open {output_dir}/00-overview.md to start learning![/dim]")
 
     except Exception as e:
         handle_api_error(e)
+        sys.exit(1)
+
+
+@main.command()
+@click.argument(
+    "output_dir",
+    type=click.Path(),
+    default="code-guro-output",
+    required=False,
+)
+def convert(output_dir: str):
+    """Convert markdown-only output to include HTML files.
+
+    OUTPUT_DIR is the directory containing markdown files (default: code-guro-output).
+
+    Useful if you previously ran 'code-guro analyze --markdown-only' and now want
+    to add HTML files. Organizes files into markdown/ and html/ subdirectories.
+
+    Examples:
+
+        code-guro convert
+
+        code-guro convert ./code-guro-output
+
+        code-guro convert /path/to/output
+    """
+    from code_guro.html_converter import convert_directory_to_html
+
+    output_path = Path(output_dir).resolve()
+
+    console.print()
+    console.print("[bold]Code Guro Convert[/bold]")
+    console.print()
+
+    # Validate directory exists
+    if not output_path.exists():
+        console.print(f"[red]Error:[/red] Directory not found: {output_dir}")
+        console.print()
+        console.print("Run [bold cyan]code-guro analyze[/bold cyan] first to generate documentation.")
+        sys.exit(1)
+
+    if not output_path.is_dir():
+        console.print(f"[red]Error:[/red] Not a directory: {output_dir}")
+        sys.exit(1)
+
+    # Check for markdown files
+    md_files = list(output_path.glob("*.md"))
+    if not md_files:
+        console.print(f"[yellow]Warning:[/yellow] No markdown files found in {output_dir}")
+        console.print()
+        console.print("This directory doesn't appear to contain Code Guro output.")
+        sys.exit(1)
+
+    try:
+        console.print(f"[dim]Converting {len(md_files)} markdown file(s) to HTML...[/dim]")
+        console.print(f"[dim]Organizing files into subdirectories...[/dim]")
+        console.print()
+
+        # Create subdirectories
+        markdown_dir = output_path / "markdown"
+        html_dir = output_path / "html"
+        markdown_dir.mkdir(exist_ok=True)
+        html_dir.mkdir(exist_ok=True)
+
+        # Move markdown files to markdown/ subdirectory
+        import shutil
+        for md_file in md_files:
+            dest = markdown_dir / md_file.name
+            shutil.move(str(md_file), str(dest))
+
+        # Convert markdown to HTML in html/ subdirectory
+        from code_guro.html_converter import convert_directory_to_html_organized
+        convert_directory_to_html_organized(markdown_dir, html_dir)
+
+        # List generated files
+        md_files_moved = sorted(markdown_dir.glob("*.md"))
+        html_files = sorted(html_dir.glob("*.html"))
+
+        console.print("[bold green]Conversion complete![/bold green]")
+        console.print()
+        console.print("Directory structure:")
+        console.print(f"  [cyan]{output_path.name}/[/cyan]")
+        console.print(f"    [cyan]markdown/[/cyan] ({len(md_files_moved)} files)")
+        console.print(f"    [cyan]html/[/cyan] ({len(html_files)} files)")
+        console.print()
+        console.print(f"[dim]Open {html_dir}/00-overview.html in your browser![/dim]")
+        console.print()
+
+    except Exception as e:
+        console.print(f"[red]Error during conversion:[/red] {str(e)}")
         sys.exit(1)
 
 

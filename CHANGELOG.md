@@ -9,6 +9,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 - Chunked analysis for large codebases (>150K tokens)
+- `code-guro convert` command for adding HTML to markdown-only output
+- Dual-format output by default (HTML + markdown in organized subdirectories)
+- `--markdown-only` flag for analyze command to generate only markdown
+
+### Changed
+- **Breaking**: `code-guro analyze` now generates both HTML and markdown by default, organized in `html/` and `markdown/` subdirectories
+- **Breaking**: Removed `--format` flag, replaced with `--markdown-only` for simpler UX
+- Output directory structure now cleaner with format-specific subdirectories
+- HTML output is now the recommended format for best diagram rendering experience
 
 ## [0.1.0] - 2025-12-28
 

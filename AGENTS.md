@@ -82,7 +82,9 @@ code-guro/
 ```
 CLI Input → Analyzer (file traversal, framework detection)
          → Generator (Claude API prompts)
-         → Output files (code-guro-output/ directory)
+         → Markdown files (code-guro-output/markdown/)
+         → HTML Converter (optional, default enabled)
+         → HTML files (code-guro-output/html/)
 ```
 
 ---
@@ -139,12 +141,17 @@ ruff check src/ --fix
 # Configure API key (stored in ~/.config/code-guro/config.json)
 code-guro configure
 
-# Analyze a local codebase
+# Analyze a local codebase (generates both HTML and markdown by default)
 code-guro analyze .
 code-guro analyze /path/to/project
+code-guro analyze . --markdown-only  # Generate only markdown
 
 # Analyze a GitHub repository
 code-guro analyze https://github.com/user/repo
+
+# Convert markdown-only output to include HTML
+code-guro convert
+code-guro convert /path/to/output
 
 # Deep dive into specific files/folders
 code-guro explain ./src/auth
@@ -258,7 +265,7 @@ def analyze_codebase(path: str, max_files: int = 500) -> AnalysisResult:
 | Category | Items |
 |----------|-------|
 | **Secrets** | API keys, `~/.config/code-guro/config.json`, `.env` files |
-| **Generated Output** | `code-guro-output/` directory (analysis results) |
+| **Generated Output** | `code-guro-output/` directory with `html/` and `markdown/` subdirectories (analysis results) |
 | **Virtual Environments** | `venv/`, `.venv/`, `env/` |
 | **Cache Directories** | `__pycache__/`, `.pytest_cache/`, `.ruff_cache/` |
 | **Build Artifacts** | `build/`, `dist/`, `*.egg-info/` |
@@ -378,6 +385,7 @@ code-guro-output/
 | Change Claude prompts | `src/code_guro/prompts.py` |
 | Update error messages | `src/code_guro/errors.py` |
 | Modify output format | `src/code_guro/generator.py` |
+| Update HTML conversion | `src/code_guro/html_converter.py` |
 
 ### Critical Constants (in utils.py)
 
@@ -402,6 +410,7 @@ MODEL = "claude-sonnet-4-20250514"
 2. **Tests are colocated** - test files live alongside source files
 3. **Rich console is preferred** - use `rich.console.Console` for all output
 4. **Cost awareness is critical** - always consider token costs when modifying prompts
-5. **The tool generates documentation** - output goes to `code-guro-output/` directory
-6. **Framework detection is extensible** - add new frameworks in `frameworks.py`
-7. **API key is stored securely** - mode 0o600 in user config directory
+5. **The tool generates documentation** - output goes to `code-guro-output/` directory with `html/` and `markdown/` subdirectories (dual format by default)
+6. **HTML is the default format** - provides fully rendered Mermaid diagrams; markdown is for version control/GitHub viewing
+7. **Framework detection is extensible** - add new frameworks in `frameworks.py`
+8. **API key is stored securely** - mode 0o600 in user config directory

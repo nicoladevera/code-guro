@@ -381,3 +381,41 @@ def convert_directory_to_html(output_dir: Path) -> None:
             progress.advance(task)
 
     console.print(f"[green]Converted {len(md_files)} files to HTML[/green]")
+
+
+def convert_directory_to_html_organized(markdown_dir: Path, html_dir: Path) -> None:
+    """Convert markdown files from one directory to HTML in another directory.
+
+    Args:
+        markdown_dir: Directory containing source markdown files
+        html_dir: Directory where HTML files will be created
+    """
+    from rich.progress import Progress, SpinnerColumn, TextColumn
+
+    md_files = list(markdown_dir.glob("*.md"))
+
+    if not md_files:
+        console.print("[yellow]No markdown files found to convert.[/yellow]")
+        return
+
+    with Progress(
+        SpinnerColumn(),
+        TextColumn("[progress.description]{task.description}"),
+        console=console,
+        transient=True,
+    ) as progress:
+        task = progress.add_task("Converting to HTML...", total=len(md_files))
+
+        for md_file in md_files:
+            progress.update(task, description=f"Converting {md_file.name}...")
+
+            try:
+                html_content = convert_file_to_html(md_file, md_files)
+                html_path = html_dir / md_file.with_suffix(".html").name
+                html_path.write_text(html_content)
+            except Exception as e:
+                console.print(f"[yellow]Warning:[/yellow] Could not convert {md_file.name}: {e}")
+
+            progress.advance(task)
+
+    console.print(f"[green]Converted {len(md_files)} files to HTML[/green]")

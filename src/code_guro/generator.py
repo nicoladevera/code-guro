@@ -613,22 +613,29 @@ def generate_next_steps(result: AnalysisResult) -> str:
 
 def generate_documentation(
     result: AnalysisResult,
-    output_format: str = "markdown",
+    markdown_only: bool = False,
 ) -> Path:
     """Generate all documentation for a codebase.
 
     Args:
         result: Analysis result
-        output_format: Output format ("markdown" or "html")
+        markdown_only: If True, generate only markdown files. If False, generate both HTML and markdown in subdirectories.
 
     Returns:
         Path to output directory
     """
     output_dir = create_output_dir(result.root)
 
+    # Determine target directory for markdown files
+    if markdown_only:
+        markdown_dir = output_dir
+    else:
+        markdown_dir = output_dir / "markdown"
+        markdown_dir.mkdir(exist_ok=True)
+
     # Use chunked analysis for large codebases
     if result.needs_chunking:
-        generate_chunked_documentation(result, output_dir)
+        generate_chunked_documentation(result, markdown_dir)
     else:
         # Standard (non-chunked) generation
         documents = [
@@ -654,7 +661,7 @@ def generate_documentation(
                 progress.update(task, description=description)
                 content = generator(result)
 
-                filepath = output_dir / filename
+                filepath = markdown_dir / filename
                 filepath.write_text(content)
                 progress.advance(task)
 
@@ -665,16 +672,18 @@ def generate_documentation(
             for module in modules:
                 content = generate_deep_dive(module, result)
                 filename = f"04-deep-dive-{module['name'].lower().replace(' ', '-')}.md"
-                filepath = output_dir / filename
+                filepath = markdown_dir / filename
                 filepath.write_text(content)
 
             progress.advance(task)
 
-    # Convert to HTML if requested
-    if output_format == "html":
-        from code_guro.html_converter import convert_directory_to_html
+    # Generate HTML by default (unless markdown_only is True)
+    if not markdown_only:
+        from code_guro.html_converter import convert_directory_to_html_organized
 
-        convert_directory_to_html(output_dir)
+        html_dir = output_dir / "html"
+        html_dir.mkdir(exist_ok=True)
+        convert_directory_to_html_organized(markdown_dir, html_dir)
 
     console.print()
     console.print("[green]Documentation generated successfully![/green]")
