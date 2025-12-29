@@ -184,18 +184,18 @@ Update the file after completing each sub-task, not just after completing an ent
 
 - [x] 9.0 Testing & Quality Assurance
   - [x] 9.1 Set up pytest configuration in pyproject.toml
-  - [ ] 9.2 Create test fixtures for sample codebases (small, medium, with frameworks)
-  - [ ] 9.3 Write unit tests for CLI commands (analyze, explain, configure invocation)
+  - [x] 9.2 Create test fixtures for sample codebases (small, medium, with frameworks) (conftest.py)
+  - [x] 9.3 Write unit tests for CLI commands (analyze, explain, configure invocation) (analyze and convert commands tested - 10 tests)
   - [x] 9.4 Write unit tests for config module (read, write, validate API key)
   - [x] 9.5 Write unit tests for file system operations (traversal, filtering, encoding)
   - [x] 9.6 Write unit tests for framework detection (each of the 7 frameworks)
   - [x] 9.7 Write unit tests for token estimation and cost calculation
-  - [ ] 9.8 Write unit tests for markdown generation functions
-  - [ ] 9.9 Write unit tests for HTML conversion
+  - [x] 9.8 Write unit tests for markdown generation functions (generator_test.py - 6 tests)
+  - [x] 9.9 Write unit tests for HTML conversion (html_converter_test.py - 17 tests)
   - [ ] 9.10 Write unit tests for REPL session management
   - [x] 9.11 Create `tests/integration/` directory
   - [ ] 9.12 Write integration test for full analyze workflow (directory → markdown output)
-  - [ ] 9.13 Write integration test for analyze with HTML output
+  - [x] 9.13 Write integration test for analyze with HTML output (cli_test.py covers dual-format workflow)
   - [ ] 9.14 Write integration test for explain command
   - [ ] 9.15 Write integration test for configure command flow
   - [ ] 9.16 Test cross-platform compatibility (macOS, Linux, Windows path handling)
