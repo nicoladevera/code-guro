@@ -1,0 +1,81 @@
+[build-system]
+requires = ["setuptools>=61.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "code-guro"
+version = "0.1.0"
+description = "A CLI tool to help non-technical product managers and AI-native builders understand codebases"
+readme = "README.md"
+license = {text = "MIT"}
+authors = [
+    {name = "Nicola de Vera", email = "nicola@example.com"}
+]
+keywords = ["cli", "code-analysis", "documentation", "learning", "ai"]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Environment :: Console",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.8",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Topic :: Documentation",
+    "Topic :: Software Development :: Documentation",
+]
+requires-python = ">=3.8"
+dependencies = [
+    "anthropic>=0.18.0",
+    "click>=8.0",
+    "rich>=13.0",
+    "gitpython>=3.1",
+    "tiktoken>=0.5.0",
+    "markdown>=3.4",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=7.0",
+    "pytest-cov>=4.0",
+    "black>=23.0",
+    "ruff>=0.1.0",
+]
+enhanced = [
+    "python-dotenv>=1.0",
+    "prompt_toolkit>=3.0",
+    "pygments>=2.15",
+]
+all = [
+    "code-guro[dev,enhanced]",
+]
+
+[project.scripts]
+code-guro = "code_guro.cli:main"
+
+[project.urls]
+Homepage = "https://github.com/nicoladevera/code-guro"
+Repository = "https://github.com/nicoladevera/code-guro"
+Documentation = "https://github.com/nicoladevera/code-guro#readme"
+Issues = "https://github.com/nicoladevera/code-guro/issues"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.pytest.ini_options]
+testpaths = ["src", "tests"]
+python_files = ["*test*.py", "test_*.py"]
+addopts = "-v --tb=short"
+
+[tool.black]
+line-length = 100
+target-version = ["py38"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py38"
+select = ["E", "F", "W", "I", "UP", "B", "C4"]
+ignore = ["E501"]
