@@ -66,9 +66,9 @@ class TestGenerateDocumentation:
         assert len(html_files) > 0, "No HTML files in html/ directory"
 
         # Verify equal counts
-        assert len(md_files) == len(html_files), (
-            f"File count mismatch: {len(md_files)} markdown, {len(html_files)} HTML"
-        )
+        assert len(md_files) == len(
+            html_files
+        ), f"File count mismatch: {len(md_files)} markdown, {len(html_files)} HTML"
 
     def test_dual_format_calls_html_converter(
         self, tmp_path, mock_analysis_result, mock_anthropic_client
@@ -77,7 +77,9 @@ class TestGenerateDocumentation:
         mock_analysis_result.root = tmp_path
 
         # Patch the HTML converter at its source (imported inside the function)
-        with patch("code_guro.html_converter.convert_directory_to_html_organized") as mock_converter:
+        with patch(
+            "code_guro.html_converter.convert_directory_to_html_organized"
+        ) as mock_converter:
             output_dir = generate_documentation(mock_analysis_result, markdown_only=False)
 
             # Verify HTML converter was called
@@ -98,13 +100,15 @@ class TestGenerateDocumentation:
         mock_analysis_result.root = tmp_path
 
         # Patch the HTML converter at its source
-        with patch("code_guro.html_converter.convert_directory_to_html_organized") as mock_converter:
+        with patch(
+            "code_guro.html_converter.convert_directory_to_html_organized"
+        ) as mock_converter:
             generate_documentation(mock_analysis_result, markdown_only=True)
 
             # Verify HTML converter was NOT called
-            assert not mock_converter.called, (
-                "HTML converter should not be called in markdown-only mode"
-            )
+            assert (
+                not mock_converter.called
+            ), "HTML converter should not be called in markdown-only mode"
 
     def test_return_value_is_output_directory(
         self, tmp_path, mock_analysis_result, mock_anthropic_client
@@ -121,6 +125,7 @@ class TestGenerateDocumentation:
         # Test dual-format mode
         # Need to delete the existing output directory first
         import shutil
+
         shutil.rmtree(output_dir_md)
 
         output_dir_dual = generate_documentation(mock_analysis_result, markdown_only=False)
@@ -159,9 +164,7 @@ class TestGenerateDocumentation:
             content = filepath.read_text()
             assert len(content) > 0, f"File {filename} is empty"
 
-    def test_chunked_analysis_workflow(
-        self, tmp_path, mock_anthropic_client
-    ):
+    def test_chunked_analysis_workflow(self, tmp_path, mock_anthropic_client):
         """Should handle chunked analysis for large codebases."""
         from code_guro.analyzer import AnalysisResult, FileInfo, FrameworkInfo
 
@@ -174,7 +177,7 @@ class TestGenerateDocumentation:
                     relative_path="file.py",
                     content="x" * 1000,
                     tokens=100,
-                    extension=".py"
+                    extension=".py",
                 )
             ],
             frameworks=[],
@@ -196,9 +199,7 @@ class TestGenerateDocumentation:
         md_files = list(output_dir.glob("*.md"))
         assert len(md_files) > 0
 
-    def test_generates_module_deep_dives(
-        self, tmp_path, mock_anthropic_client, monkeypatch
-    ):
+    def test_generates_module_deep_dives(self, tmp_path, mock_anthropic_client, monkeypatch):
         """Should generate deep dive files for identified modules."""
         from code_guro.analyzer import AnalysisResult, FileInfo
 
@@ -210,14 +211,14 @@ class TestGenerateDocumentation:
                     "path": "auth",
                     "files": result.files[:1],
                     "file_count": 1,
-                    "tokens": 50
+                    "tokens": 50,
                 },
                 {
                     "name": "Database",
                     "path": "db",
                     "files": result.files[:1],
                     "file_count": 1,
-                    "tokens": 50
+                    "tokens": 50,
                 },
             ]
 
@@ -231,7 +232,7 @@ class TestGenerateDocumentation:
                     relative_path="auth.py",
                     content="# Auth code",
                     tokens=50,
-                    extension=".py"
+                    extension=".py",
                 )
             ],
             frameworks=[],
@@ -257,9 +258,7 @@ class TestGenerateDocumentation:
         # At least one should exist
         assert auth_file.exists() or db_file.exists(), "Deep dive files should be created"
 
-    def test_generate_documentation_creates_output_directory(
-        self, tmp_path, mock_anthropic_client
-    ):
+    def test_generate_documentation_creates_output_directory(self, tmp_path, mock_anthropic_client):
         """Should create output directory if it doesn't exist."""
         from code_guro.analyzer import AnalysisResult, FileInfo
 
@@ -271,7 +270,7 @@ class TestGenerateDocumentation:
                     relative_path="test.py",
                     content="# Test",
                     tokens=10,
-                    extension=".py"
+                    extension=".py",
                 )
             ],
             frameworks=[],

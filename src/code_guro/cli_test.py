@@ -86,13 +86,11 @@ class TestAnalyzeCommand:
 
             assert len(md_files) > 0, "No markdown files were created"
             assert len(html_files) > 0, "No HTML files were created"
-            assert len(md_files) == len(html_files), (
-                f"File count mismatch: {len(md_files)} markdown, {len(html_files)} HTML"
-            )
+            assert len(md_files) == len(
+                html_files
+            ), f"File count mismatch: {len(md_files)} markdown, {len(html_files)} HTML"
 
-    def test_analyze_markdown_only_flag(
-        self, tmp_path, mock_dependencies, mock_anthropic_client
-    ):
+    def test_analyze_markdown_only_flag(self, tmp_path, mock_dependencies, mock_anthropic_client):
         """Should create flat structure with only markdown files when --markdown-only is used."""
         runner = CliRunner()
 
@@ -197,6 +195,7 @@ class TestAnalyzeCommand:
 
         # Mock analyze_codebase to return empty result
         from code_guro.analyzer import AnalysisResult
+
         empty_result = AnalysisResult(
             root=Path("."),
             files=[],  # No files
@@ -217,7 +216,9 @@ class TestAnalyzeCommand:
 
             # Should fail with warning about no files
             assert result.exit_code == 1
-            assert "no" in result.output.lower() and ("file" in result.output.lower() or "warning" in result.output.lower())
+            assert "no" in result.output.lower() and (
+                "file" in result.output.lower() or "warning" in result.output.lower()
+            )
 
     def test_analyze_with_api_exception(self, tmp_path, mock_dependencies, monkeypatch):
         """Should handle API exceptions gracefully."""
@@ -392,8 +393,7 @@ class TestConvertCommand:
             raise Exception("Conversion error")
 
         monkeypatch.setattr(
-            "code_guro.html_converter.convert_directory_to_html_organized",
-            mock_convert_error
+            "code_guro.html_converter.convert_directory_to_html_organized", mock_convert_error
         )
 
         with runner.isolated_filesystem(temp_dir=tmp_path):
@@ -432,7 +432,9 @@ class TestConfigureCommand:
         runner = CliRunner()
 
         # Mock validation to fail (returns tuple)
-        monkeypatch.setattr("code_guro.cli.validate_api_key", lambda key: (False, "Invalid API key"))
+        monkeypatch.setattr(
+            "code_guro.cli.validate_api_key", lambda key: (False, "Invalid API key")
+        )
         monkeypatch.setattr("code_guro.cli.is_api_key_configured", lambda: False)
 
         result = runner.invoke(main, ["configure"], input="invalid-key\n")

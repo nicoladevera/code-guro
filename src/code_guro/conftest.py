@@ -82,7 +82,7 @@ def mock_analysis_result():
             content="print('Hello, world!')",
             tokens=50,
             extension=".py",
-            is_entry_point=True
+            is_entry_point=True,
         ),
         FileInfo(
             path=Path("utils.py"),
@@ -90,7 +90,7 @@ def mock_analysis_result():
             content="def helper():\n    pass",
             tokens=30,
             extension=".py",
-            is_entry_point=False
+            is_entry_point=False,
         ),
     ]
 
@@ -144,9 +144,7 @@ def mock_anthropic_client(monkeypatch):
     def mock_anthropic_constructor(*args, **kwargs):
         return mock_client
 
-    monkeypatch.setattr(
-        "code_guro.generator.anthropic.Anthropic", mock_anthropic_constructor
-    )
+    monkeypatch.setattr("code_guro.generator.anthropic.Anthropic", mock_anthropic_constructor)
     return mock_client
 
 
@@ -183,8 +181,7 @@ def assert_dual_format_structure(output_dir: Path):
 
     # Verify equal number of files (one HTML for each markdown)
     assert len(md_files) == len(html_files), (
-        f"File count mismatch: {len(md_files)} markdown files, "
-        f"{len(html_files)} HTML files"
+        f"File count mismatch: {len(md_files)} markdown files, " f"{len(html_files)} HTML files"
     )
 
 
@@ -203,9 +200,7 @@ def assert_html_has_navigation(html_path: Path, expected_files: list = None):
     content = html_path.read_text()
 
     # Check for navigation element
-    assert "<nav>" in content or '<nav ' in content, (
-        f"No <nav> element found in {html_path.name}"
-    )
+    assert "<nav>" in content or "<nav " in content, f"No <nav> element found in {html_path.name}"
 
     # Check for navigation list
     assert "<ul>" in content, f"No navigation list found in {html_path.name}"
@@ -215,8 +210,7 @@ def assert_html_has_navigation(html_path: Path, expected_files: list = None):
         for filename in expected_files:
             html_filename = filename.replace(".md", ".html")
             assert html_filename in content, (
-                f"Expected file {html_filename} not found in navigation "
-                f"of {html_path.name}"
+                f"Expected file {html_filename} not found in navigation " f"of {html_path.name}"
             )
 
 
@@ -230,12 +224,10 @@ def assert_html_has_mermaid_support(html_content: str):
         AssertionError: If Mermaid.js script tag is missing
     """
     # Check for Mermaid CDN script tag
-    assert "mermaid" in html_content.lower(), (
-        "Mermaid.js script tag not found in HTML"
-    )
-    assert "cdn.jsdelivr.net" in html_content or "unpkg.com" in html_content, (
-        "Mermaid.js CDN link not found in HTML"
-    )
+    assert "mermaid" in html_content.lower(), "Mermaid.js script tag not found in HTML"
+    assert (
+        "cdn.jsdelivr.net" in html_content or "unpkg.com" in html_content
+    ), "Mermaid.js CDN link not found in HTML"
 
 
 def count_files(directory: Path, pattern: str) -> int:

@@ -87,14 +87,14 @@ class TestGetNavigationLinks:
         nav_html = get_navigation_links(files, current)
 
         # Should contain links to all files
-        assert '00-overview.html' in nav_html
-        assert '01-getting-oriented.html' in nav_html
-        assert '02-architecture.html' in nav_html
+        assert "00-overview.html" in nav_html
+        assert "01-getting-oriented.html" in nav_html
+        assert "02-architecture.html" in nav_html
 
         # Should contain readable link text (without number prefixes)
-        assert 'Overview' in nav_html
-        assert 'Getting Oriented' in nav_html
-        assert 'Architecture' in nav_html
+        assert "Overview" in nav_html
+        assert "Getting Oriented" in nav_html
+        assert "Architecture" in nav_html
 
     def test_marks_current_page(self, tmp_path):
         """Should mark the current page with 'current' class."""
@@ -147,7 +147,7 @@ class TestConvertFileToHtml:
 
         # Verify HTML structure
         assert "<!DOCTYPE html>" in html_content
-        assert "<html lang=\"en\">" in html_content
+        assert '<html lang="en">' in html_content
         assert "<head>" in html_content
         assert "<body>" in html_content
         assert "</html>" in html_content
