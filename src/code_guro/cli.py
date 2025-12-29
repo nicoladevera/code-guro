@@ -282,7 +282,7 @@ def configure():
     console.print()
 
     # Prompt for API key
-    api_key = Prompt.ask("API key", password=True)
+    api_key = Prompt.ask("API key", password=False)
 
     if not api_key:
         console.print("[red]Error: API key cannot be empty.[/red]")

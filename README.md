@@ -19,8 +19,10 @@ Code Guro analyzes a codebase and generates structured, beginner-friendly learni
 ## Installation
 
 ```bash
-pip install code-guro
+pip3 install code-guro
 ```
+
+> **Note:** On some systems, you may need to use `pip3` instead of `pip` to install Python packages.
 
 **Requirements:**
 - Python 3.8 or higher
