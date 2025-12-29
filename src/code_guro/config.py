@@ -3,6 +3,8 @@
 Handles API key storage, retrieval, and validation.
 """
 
+from __future__ import annotations
+
 import json
 import os
 import stat
