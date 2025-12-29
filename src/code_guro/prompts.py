@@ -443,3 +443,104 @@ Remember: The user may ask things like:
 - "What would happen if I changed X?"
 
 Be helpful, clear, and encouraging!"""
+
+
+# Chunked Analysis Prompts
+
+CHUNK_ANALYSIS_PROMPT = """Analyze this portion of a larger codebase for a non-technical reader.
+
+## Chunk Information
+- Chunk {chunk_number} of {total_chunks}
+- Files in this chunk: {file_count}
+- Directories covered: {directories}
+
+## Framework Context
+{framework_context}
+
+## Files in This Chunk
+{chunk_files}
+
+---
+
+Provide a focused analysis of THIS CHUNK ONLY. Include:
+
+1. **Key Components**: What are the main files/modules in this chunk?
+2. **Purpose**: What does this part of the codebase do?
+3. **Patterns**: What coding patterns or conventions do you see?
+4. **Relationships**: How do files in this chunk relate to each other?
+5. **Notable Code**: Any particularly important functions or classes?
+
+Keep your analysis focused on what's in this chunk. We'll synthesize across all chunks later.
+
+Format your response as valid Markdown."""
+
+
+SYNTHESIS_OVERVIEW_PROMPT = """Synthesize these chunk analyses into a cohesive executive summary.
+
+## Codebase Information
+- Root directory: {root}
+- Total files: {file_count}
+- Total chunks analyzed: {chunk_count}
+- Detected frameworks: {frameworks}
+
+## Chunk Analyses
+{chunk_analyses}
+
+---
+
+Create a unified executive summary that:
+1. Explains what the entire application does (combining insights from all chunks)
+2. Describes the overall tech stack
+3. Provides a high-level architecture overview
+4. Includes a Mermaid diagram showing how major components connect
+
+Remember: The reader is non-technical. Be clear and avoid jargon.
+
+Format your response as valid Markdown with proper headings."""
+
+
+SYNTHESIS_ARCHITECTURE_PROMPT = """Synthesize these chunk analyses into a cohesive architecture document.
+
+## Codebase Information
+- Detected frameworks: {frameworks}
+- Total chunks analyzed: {chunk_count}
+
+## Chunk Analyses
+{chunk_analyses}
+
+---
+
+Create a unified architecture document that:
+1. Describes the overall architectural style
+2. Explains how different parts of the codebase connect
+3. Identifies the main data flows
+4. Includes Mermaid diagrams for visualization
+
+Note: Since this is a large codebase analyzed in chunks, some cross-module relationships
+may be inferred. Focus on the patterns that are clearly visible.
+
+Format your response as valid Markdown."""
+
+
+SYNTHESIS_CORE_FILES_PROMPT = """Synthesize these chunk analyses to identify the most critical files.
+
+## Codebase Information
+- Total files: {file_count}
+- Total chunks analyzed: {chunk_count}
+- Detected frameworks: {frameworks}
+
+## Chunk Analyses
+{chunk_analyses}
+
+## Candidate Critical Files (from all chunks)
+{critical_files_summary}
+
+---
+
+Create a guide to the most important files across the entire codebase:
+1. Identify the 10-15 most critical files from all chunks
+2. Explain why each is important
+3. Suggest a reading order that makes sense across the codebase
+4. Note any key relationships between files in different chunks
+
+Format your response as valid Markdown."""
