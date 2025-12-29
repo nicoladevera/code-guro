@@ -28,9 +28,31 @@ Thank you for your interest in contributing to Code Guro!
 
 ## Code Style
 
-- Format code with Black: `black src/`
-- Lint with Ruff: `ruff check src/`
-- Run both before committing
+We use Black for formatting and Ruff for linting. **Always run these before committing:**
+
+```bash
+# Format code
+black src/
+
+# Check for linting errors (auto-fix where possible)
+ruff check src/ --fix
+
+# Run tests
+pytest
+```
+
+Or run all checks at once:
+```bash
+black src/ && ruff check src/ --fix && pytest
+```
+
+### Python Version Compatibility
+
+We support Python 3.8+. Keep these guidelines in mind:
+
+- **Type hints**: Use `from __future__ import annotations` at the top of files that use modern type syntax
+- **Avoid Python 3.9+ syntax**: Don't use `list[str]` or `dict[str, int]` without the future import; use `List[str]` from `typing` or add the annotations import
+- **Avoid Python 3.10+ syntax**: Don't use `str | None`; use `Optional[str]` from `typing` instead
 
 ## Making Changes
 
@@ -41,9 +63,9 @@ Thank you for your interest in contributing to Code Guro!
 
 2. Make your changes and add tests
 
-3. Ensure tests pass:
+3. **Run the pre-commit checklist:**
    ```bash
-   pytest
+   black src/ && ruff check src/ --fix && pytest
    ```
 
 4. Commit with a descriptive message

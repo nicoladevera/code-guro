@@ -235,11 +235,11 @@ pip install -e ".[dev]"
 pytest
 ```
 
-### Code Formatting
+### Code Quality
 
+Before committing, run all checks:
 ```bash
-black src/
-ruff check src/
+black src/ && ruff check src/ --fix && pytest
 ```
 
 ## License
@@ -248,7 +248,7 @@ MIT
 
 ## Contributing
 
-Contributions are welcome! Please feel free to submit a Pull Request.
+Contributions are welcome! See [CONTRIBUTING.md](CONTRIBUTING.md) for development guidelines, code style, and the release process.
 
 ## Acknowledgments
 

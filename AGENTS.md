@@ -325,17 +325,23 @@ Types:
 - Tests should pass before merge
 
 ### Pre-commit Checks (Manual)
-Before committing, run:
+Before committing, run all checks:
 ```bash
-# Format code
-black src/
-
-# Check linting
-ruff check src/
-
-# Run tests
-pytest
+black src/ && ruff check src/ --fix && pytest
 ```
+
+Or individually:
+```bash
+black src/           # Format code
+ruff check src/ --fix  # Lint and auto-fix
+pytest               # Run tests
+```
+
+### Python 3.8 Compatibility
+Since we target Python 3.8+, avoid:
+- `list[str]`, `dict[str, int]` → use `List[str]`, `Dict[str, int]` from `typing`
+- `str | None` → use `Optional[str]` from `typing`
+- Or add `from __future__ import annotations` at file top to enable modern syntax
 
 ### .gitignore Categories
 ```
