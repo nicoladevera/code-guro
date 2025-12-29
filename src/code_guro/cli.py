@@ -177,8 +177,7 @@ def explain(path: str, interactive: bool, output: str):
 
         code-guro explain ./src/auth --output console
     """
-    from code_guro.analyzer import analyze_codebase
-    from code_guro.generator import generate_explain_document, create_output_dir
+    from code_guro.generator import create_output_dir, generate_explain_document
     from code_guro.utils import read_file_safely, traverse_directory
 
     path_obj = Path(path).resolve()
@@ -217,11 +216,13 @@ def explain(path: str, interactive: bool, output: str):
             parent = parent.parent
 
         from code_guro.frameworks import detect_frameworks
+
         frameworks = detect_frameworks(parent)
 
         if interactive:
             # Launch interactive mode
             from code_guro.repl import start_repl
+
             start_repl(path_obj, content, frameworks)
         else:
             # Generate explanation document
@@ -264,11 +265,14 @@ def configure():
         console.print(f"Current API key: [cyan]{mask_api_key(current_key)}[/cyan]")
         console.print()
 
-        if not Prompt.ask(
-            "Do you want to replace the existing API key?",
-            choices=["y", "n"],
-            default="n",
-        ) == "y":
+        if (
+            not Prompt.ask(
+                "Do you want to replace the existing API key?",
+                choices=["y", "n"],
+                default="n",
+            )
+            == "y"
+        ):
             console.print("[yellow]Configuration unchanged.[/yellow]")
             return
 
@@ -302,9 +306,7 @@ def configure():
     console.print()
     console.print("[green]✓ API key saved successfully![/green]")
     console.print()
-    console.print(
-        "You can now use [bold cyan]code-guro analyze[/bold cyan] to analyze a codebase."
-    )
+    console.print("You can now use [bold cyan]code-guro analyze[/bold cyan] to analyze a codebase.")
 
 
 if __name__ == "__main__":

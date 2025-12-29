@@ -145,7 +145,7 @@ def start_repl(
                     "Consider starting a fresh session for best results."
                 )
                 # Keep only the last N pairs
-                messages = messages[-(MAX_HISTORY_PAIRS * 2):]
+                messages = messages[-(MAX_HISTORY_PAIRS * 2) :]
 
             # Call API
             console.print()

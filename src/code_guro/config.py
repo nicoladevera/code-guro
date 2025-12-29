@@ -66,9 +66,9 @@ def read_config() -> dict:
         return {}
 
     try:
-        with open(config_file, "r") as f:
+        with open(config_file) as f:
             return json.load(f)
-    except (json.JSONDecodeError, IOError):
+    except (OSError, json.JSONDecodeError):
         return {}
 
 

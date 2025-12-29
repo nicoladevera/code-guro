@@ -174,9 +174,9 @@ def detect_nextjs(root: Path) -> Optional[FrameworkInfo]:
         return None
 
     try:
-        with open(package_json, "r") as f:
+        with open(package_json) as f:
             pkg = json.load(f)
-    except (json.JSONDecodeError, IOError):
+    except (OSError, json.JSONDecodeError):
         return None
 
     deps = {**pkg.get("dependencies", {}), **pkg.get("devDependencies", {})}
@@ -203,9 +203,9 @@ def detect_react(root: Path) -> Optional[FrameworkInfo]:
         return None
 
     try:
-        with open(package_json, "r") as f:
+        with open(package_json) as f:
             pkg = json.load(f)
-    except (json.JSONDecodeError, IOError):
+    except (OSError, json.JSONDecodeError):
         return None
 
     deps = {**pkg.get("dependencies", {}), **pkg.get("devDependencies", {})}
@@ -225,9 +225,9 @@ def detect_vue(root: Path) -> Optional[FrameworkInfo]:
         return None
 
     try:
-        with open(package_json, "r") as f:
+        with open(package_json) as f:
             pkg = json.load(f)
-    except (json.JSONDecodeError, IOError):
+    except (OSError, json.JSONDecodeError):
         return None
 
     deps = {**pkg.get("dependencies", {}), **pkg.get("devDependencies", {})}
@@ -238,7 +238,7 @@ def detect_vue(root: Path) -> Optional[FrameworkInfo]:
         return info
 
     # Check for .vue files
-    for path in root.rglob("*.vue"):
+    for _path in root.rglob("*.vue"):
         return FRAMEWORK_METADATA["vue"]
 
     return None
@@ -257,7 +257,7 @@ def detect_django(root: Path) -> Optional[FrameworkInfo]:
             content = requirements.read_text().lower()
             if "django" in content:
                 return FRAMEWORK_METADATA["django"]
-        except IOError:
+        except OSError:
             pass
 
     # Check for settings.py pattern
@@ -266,7 +266,7 @@ def detect_django(root: Path) -> Optional[FrameworkInfo]:
             content = settings.read_text()
             if "INSTALLED_APPS" in content or "Django" in content:
                 return FRAMEWORK_METADATA["django"]
-        except IOError:
+        except OSError:
             continue
 
     return None
@@ -281,7 +281,7 @@ def detect_flask(root: Path) -> Optional[FrameworkInfo]:
             content = requirements.read_text().lower()
             if "flask" in content:
                 return FRAMEWORK_METADATA["flask"]
-        except IOError:
+        except OSError:
             pass
 
     # Check for Flask app patterns
@@ -292,7 +292,7 @@ def detect_flask(root: Path) -> Optional[FrameworkInfo]:
                 content = filepath.read_text()
                 if "Flask(" in content or "from flask import" in content:
                     return FRAMEWORK_METADATA["flask"]
-            except IOError:
+            except OSError:
                 continue
 
     return None
@@ -305,9 +305,9 @@ def detect_express(root: Path) -> Optional[FrameworkInfo]:
         return None
 
     try:
-        with open(package_json, "r") as f:
+        with open(package_json) as f:
             pkg = json.load(f)
-    except (json.JSONDecodeError, IOError):
+    except (OSError, json.JSONDecodeError):
         return None
 
     deps = {**pkg.get("dependencies", {}), **pkg.get("devDependencies", {})}
@@ -332,7 +332,7 @@ def detect_rails(root: Path) -> Optional[FrameworkInfo]:
             # Check for routes.rb to confirm
             if (root / "config" / "routes.rb").exists():
                 return FRAMEWORK_METADATA["rails"]
-    except IOError:
+    except OSError:
         pass
 
     return None

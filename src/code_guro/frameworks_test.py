@@ -4,8 +4,6 @@ import json
 import tempfile
 from pathlib import Path
 
-import pytest
-
 from code_guro.frameworks import (
     FRAMEWORK_METADATA,
     detect_django,
@@ -50,9 +48,9 @@ class TestNextJsDetection:
         """Should detect Next.js from package.json."""
         with tempfile.TemporaryDirectory() as tmpdir:
             package_json = Path(tmpdir) / "package.json"
-            package_json.write_text(json.dumps({
-                "dependencies": {"next": "^14.0.0", "react": "^18.0.0"}
-            }))
+            package_json.write_text(
+                json.dumps({"dependencies": {"next": "^14.0.0", "react": "^18.0.0"}})
+            )
 
             result = detect_nextjs(Path(tmpdir))
             assert result is not None
@@ -72,9 +70,7 @@ class TestReactDetection:
         """Should detect React from package.json."""
         with tempfile.TemporaryDirectory() as tmpdir:
             package_json = Path(tmpdir) / "package.json"
-            package_json.write_text(json.dumps({
-                "dependencies": {"react": "^18.0.0"}
-            }))
+            package_json.write_text(json.dumps({"dependencies": {"react": "^18.0.0"}}))
 
             result = detect_react(Path(tmpdir))
             assert result is not None
@@ -88,9 +84,7 @@ class TestVueDetection:
         """Should detect Vue from package.json."""
         with tempfile.TemporaryDirectory() as tmpdir:
             package_json = Path(tmpdir) / "package.json"
-            package_json.write_text(json.dumps({
-                "dependencies": {"vue": "^3.0.0"}
-            }))
+            package_json.write_text(json.dumps({"dependencies": {"vue": "^3.0.0"}}))
 
             result = detect_vue(Path(tmpdir))
             assert result is not None
@@ -151,9 +145,7 @@ class TestExpressDetection:
         """Should detect Express from package.json."""
         with tempfile.TemporaryDirectory() as tmpdir:
             package_json = Path(tmpdir) / "package.json"
-            package_json.write_text(json.dumps({
-                "dependencies": {"express": "^4.18.0"}
-            }))
+            package_json.write_text(json.dumps({"dependencies": {"express": "^4.18.0"}}))
 
             result = detect_express(Path(tmpdir))
             assert result is not None
@@ -186,12 +178,9 @@ class TestDetectFrameworks:
         """Should detect multiple frameworks."""
         with tempfile.TemporaryDirectory() as tmpdir:
             package_json = Path(tmpdir) / "package.json"
-            package_json.write_text(json.dumps({
-                "dependencies": {
-                    "next": "^14.0.0",
-                    "react": "^18.0.0"
-                }
-            }))
+            package_json.write_text(
+                json.dumps({"dependencies": {"next": "^14.0.0", "react": "^18.0.0"}})
+            )
 
             result = detect_frameworks(Path(tmpdir))
             names = [f.name for f in result]

@@ -3,13 +3,11 @@
 Handles codebase traversal, analysis, and preparation for documentation generation.
 """
 
-import os
 import shutil
 import tempfile
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Dict, List, Optional, Tuple
-from urllib.parse import urlparse
+from typing import Dict, List, Tuple
 
 import git
 from rich.console import Console
@@ -18,12 +16,10 @@ from rich.prompt import Confirm
 
 from code_guro.frameworks import FrameworkInfo, detect_frameworks
 from code_guro.utils import (
-    MAX_FILE_SIZE,
     SAFE_CONTEXT_TOKENS,
     count_tokens,
     estimate_cost,
     format_cost,
-    is_binary_file,
     is_file_too_large,
     is_github_url,
     read_file_safely,
@@ -123,7 +119,7 @@ def clone_github_repo(url: str) -> Path:
         return Path(temp_dir)
     except git.GitCommandError as e:
         shutil.rmtree(temp_dir, ignore_errors=True)
-        raise RuntimeError(f"Failed to clone repository: {e}")
+        raise RuntimeError(f"Failed to clone repository: {e}") from e
 
 
 def is_entry_point(path: Path) -> bool:
@@ -260,18 +256,14 @@ def analyze_codebase(
             console.print()
             console.print(f"[bold]Files analyzed:[/bold] {len(result.files)}")
             console.print(f"[bold]Total tokens:[/bold] {result.total_tokens:,}")
-            console.print(
-                f"[bold]Estimated cost:[/bold] {format_cost(result.estimated_cost)}"
-            )
+            console.print(f"[bold]Estimated cost:[/bold] {format_cost(result.estimated_cost)}")
 
             if result.skipped_files:
-                console.print(
-                    f"[yellow]Files skipped:[/yellow] {len(result.skipped_files)}"
-                )
+                console.print(f"[yellow]Files skipped:[/yellow] {len(result.skipped_files)}")
 
         return result
 
-    except Exception as e:
+    except Exception:
         # Clean up temp directory on error
         if temp_dir:
             shutil.rmtree(temp_dir, ignore_errors=True)
@@ -390,7 +382,7 @@ def chunk_files(
     current_chunk: List[FileInfo] = []
     current_tokens = 0
 
-    for dir_name, dir_files in dir_groups.items():
+    for _dir_name, dir_files in dir_groups.items():
         for f in dir_files:
             if current_tokens + f.tokens > max_tokens_per_chunk and current_chunk:
                 chunks.append(current_chunk)

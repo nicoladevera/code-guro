@@ -14,20 +14,61 @@ import tiktoken
 # Binary file extensions to skip
 BINARY_EXTENSIONS = {
     # Images
-    ".png", ".jpg", ".jpeg", ".gif", ".bmp", ".ico", ".svg", ".webp", ".tiff",
+    ".png",
+    ".jpg",
+    ".jpeg",
+    ".gif",
+    ".bmp",
+    ".ico",
+    ".svg",
+    ".webp",
+    ".tiff",
     # Audio/Video
-    ".mp3", ".mp4", ".wav", ".avi", ".mov", ".mkv", ".flac", ".ogg",
+    ".mp3",
+    ".mp4",
+    ".wav",
+    ".avi",
+    ".mov",
+    ".mkv",
+    ".flac",
+    ".ogg",
     # Archives
-    ".zip", ".tar", ".gz", ".rar", ".7z", ".bz2",
+    ".zip",
+    ".tar",
+    ".gz",
+    ".rar",
+    ".7z",
+    ".bz2",
     # Executables
-    ".exe", ".dll", ".so", ".dylib", ".bin",
+    ".exe",
+    ".dll",
+    ".so",
+    ".dylib",
+    ".bin",
     # Fonts
-    ".ttf", ".otf", ".woff", ".woff2", ".eot",
+    ".ttf",
+    ".otf",
+    ".woff",
+    ".woff2",
+    ".eot",
     # Documents
-    ".pdf", ".doc", ".docx", ".xls", ".xlsx", ".ppt", ".pptx",
+    ".pdf",
+    ".doc",
+    ".docx",
+    ".xls",
+    ".xlsx",
+    ".ppt",
+    ".pptx",
     # Other binary
-    ".pyc", ".pyo", ".class", ".o", ".a", ".lib",
-    ".sqlite", ".db", ".sqlite3",
+    ".pyc",
+    ".pyo",
+    ".class",
+    ".o",
+    ".a",
+    ".lib",
+    ".sqlite",
+    ".db",
+    ".sqlite3",
     ".lock",  # Lock files can be large and aren't useful for analysis
 }
 
@@ -131,14 +172,14 @@ def parse_gitignore(gitignore_path: Path) -> Set[str]:
         return patterns
 
     try:
-        with open(gitignore_path, "r", encoding="utf-8") as f:
+        with open(gitignore_path, encoding="utf-8") as f:
             for line in f:
                 line = line.strip()
                 # Skip empty lines and comments
                 if not line or line.startswith("#"):
                     continue
                 patterns.add(line)
-    except (IOError, UnicodeDecodeError):
+    except (OSError, UnicodeDecodeError):
         pass
 
     return patterns
@@ -212,7 +253,7 @@ def is_binary_file(path: Path) -> bool:
             chunk = f.read(8192)
             if b"\x00" in chunk:
                 return True
-    except (IOError, OSError):
+    except OSError:
         return True
 
     return False
@@ -229,7 +270,7 @@ def is_file_too_large(path: Path) -> bool:
     """
     try:
         return path.stat().st_size > MAX_FILE_SIZE
-    except (IOError, OSError):
+    except OSError:
         return True
 
 
@@ -246,11 +287,11 @@ def read_file_safely(path: Path) -> Optional[str]:
 
     for encoding in encodings:
         try:
-            with open(path, "r", encoding=encoding) as f:
+            with open(path, encoding=encoding) as f:
                 return f.read()
         except (UnicodeDecodeError, UnicodeError):
             continue
-        except (IOError, OSError):
+        except OSError:
             return None
 
     return None
@@ -281,9 +322,7 @@ def traverse_directory(
 
         # Filter out ignored directories (modify in place for os.walk)
         dirnames[:] = [
-            d
-            for d in dirnames
-            if not should_ignore(current / d, gitignore_patterns, root)
+            d for d in dirnames if not should_ignore(current / d, gitignore_patterns, root)
         ]
 
         for filename in filenames:

@@ -1,12 +1,9 @@
 """Tests for config module."""
 
-import json
 import os
 import tempfile
 from pathlib import Path
 from unittest.mock import patch
-
-import pytest
 
 from code_guro.config import (
     get_api_key,
@@ -15,7 +12,6 @@ from code_guro.config import (
     is_api_key_configured,
     mask_api_key,
     read_config,
-    save_api_key,
     write_config,
 )
 

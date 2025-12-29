@@ -3,8 +3,6 @@
 import tempfile
 from pathlib import Path
 
-import pytest
-
 from code_guro.utils import (
     BINARY_EXTENSIONS,
     count_tokens,

@@ -3,13 +3,12 @@
 Generates structured learning documentation from codebase analysis.
 """
 
-import os
 from pathlib import Path
-from typing import Dict, List, Optional
+from typing import Dict, List
 
 import anthropic
 from rich.console import Console
-from rich.progress import Progress, SpinnerColumn, TextColumn, BarColumn, TaskProgressColumn
+from rich.progress import BarColumn, Progress, SpinnerColumn, TaskProgressColumn, TextColumn
 
 from code_guro.analyzer import AnalysisResult, FileInfo, chunk_files, get_critical_files
 from code_guro.config import get_api_key
@@ -287,12 +286,8 @@ def generate_chunked_documentation(
         List of generated filenames
     """
     console.print()
-    console.print(
-        f"[yellow]Large codebase detected ({result.total_tokens:,} tokens).[/yellow]"
-    )
-    console.print(
-        f"[dim]Analyzing in {result.chunk_count} chunks for better results...[/dim]"
-    )
+    console.print(f"[yellow]Large codebase detected ({result.total_tokens:,} tokens).[/yellow]")
+    console.print(f"[dim]Analyzing in {result.chunk_count} chunks for better results...[/dim]")
     console.print()
 
     # Create chunks
@@ -379,7 +374,7 @@ separately, and then the results were synthesized into cohesive documentation.
 The following chunks were analyzed:
 """
     for i, chunk in enumerate(chunks, 1):
-        dirs = set(f.relative_path.split("/")[0] for f in chunk if "/" in f.relative_path)
+        dirs = {f.relative_path.split("/")[0] for f in chunk if "/" in f.relative_path}
         note_content += f"\n### Chunk {i}\n- Files: {len(chunk)}\n- Directories: {', '.join(sorted(dirs)) or '(root)'}\n"
 
     (output_dir / "_analysis-notes.md").write_text(note_content)
@@ -525,13 +520,15 @@ def identify_modules(result: AnalysisResult) -> List[Dict]:
     for dir_name, files in dir_groups.items():
         if len(files) >= 3:  # Only include if has 3+ files
             total_tokens = sum(f.tokens for f in files)
-            modules.append({
-                "name": dir_name,
-                "path": dir_name,
-                "files": files,
-                "file_count": len(files),
-                "tokens": total_tokens,
-            })
+            modules.append(
+                {
+                    "name": dir_name,
+                    "path": dir_name,
+                    "files": files,
+                    "file_count": len(files),
+                    "tokens": total_tokens,
+                }
+            )
 
     # Sort by token count (largest modules first)
     modules.sort(key=lambda m: m["tokens"], reverse=True)
@@ -665,7 +662,7 @@ def generate_documentation(
             progress.update(task, description="Generating module deep dives...")
             modules = identify_modules(result)
 
-            for i, module in enumerate(modules):
+            for module in modules:
                 content = generate_deep_dive(module, result)
                 filename = f"04-deep-dive-{module['name'].lower().replace(' ', '-')}.md"
                 filepath = output_dir / filename
@@ -676,10 +673,11 @@ def generate_documentation(
     # Convert to HTML if requested
     if output_format == "html":
         from code_guro.html_converter import convert_directory_to_html
+
         convert_directory_to_html(output_dir)
 
     console.print()
-    console.print(f"[green]Documentation generated successfully![/green]")
+    console.print("[green]Documentation generated successfully![/green]")
     console.print(f"[dim]Output directory: {output_dir}[/dim]")
 
     return output_dir
