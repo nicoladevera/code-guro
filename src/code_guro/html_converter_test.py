@@ -1,17 +1,14 @@
 """Tests for HTML converter module."""
 
-from pathlib import Path
-import pytest
-
-from code_guro.html_converter import (
-    convert_markdown_to_html,
-    convert_file_to_html,
-    convert_directory_to_html_organized,
-    get_navigation_links,
-)
 from code_guro.conftest import (
     assert_html_has_mermaid_support,
     create_markdown_files,
+)
+from code_guro.html_converter import (
+    convert_directory_to_html_organized,
+    convert_file_to_html,
+    convert_markdown_to_html,
+    get_navigation_links,
 )
 
 

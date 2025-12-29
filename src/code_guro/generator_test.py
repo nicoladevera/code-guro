@@ -1,11 +1,10 @@
 """Tests for documentation generator module."""
 
 from pathlib import Path
-from unittest.mock import patch, MagicMock
-import pytest
+from unittest.mock import patch
 
-from code_guro.generator import generate_documentation
 from code_guro.conftest import assert_dual_format_structure
+from code_guro.generator import generate_documentation
 
 
 class TestGenerateDocumentation:
@@ -166,7 +165,7 @@ class TestGenerateDocumentation:
 
     def test_chunked_analysis_workflow(self, tmp_path, mock_anthropic_client):
         """Should handle chunked analysis for large codebases."""
-        from code_guro.analyzer import AnalysisResult, FileInfo, FrameworkInfo
+        from code_guro.analyzer import AnalysisResult, FileInfo
 
         # Create a result that needs chunking
         large_result = AnalysisResult(

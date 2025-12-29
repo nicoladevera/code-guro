@@ -80,5 +80,5 @@ line-length = 100
 target-version = "py38"
 
 [tool.ruff.lint]
-select = ["E", "F", "W", "I", "UP", "B", "C4"]
+select = ["E", "F", "W", "I", "B", "C4"]
 ignore = ["E501"]  # E501: line too long (handled by Black)

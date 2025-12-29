@@ -1,12 +1,12 @@
 """Tests for CLI commands."""
 
 from pathlib import Path
-from unittest.mock import Mock, patch
+
 import pytest
 from click.testing import CliRunner
 
+from code_guro.analyzer import AnalysisResult
 from code_guro.cli import main
-from code_guro.analyzer import AnalysisResult, FileInfo, FrameworkInfo
 from code_guro.conftest import assert_dual_format_structure, create_markdown_files
 
 
@@ -194,8 +194,6 @@ class TestAnalyzeCommand:
         runner = CliRunner()
 
         # Mock analyze_codebase to return empty result
-        from code_guro.analyzer import AnalysisResult
-
         empty_result = AnalysisResult(
             root=Path("."),
             files=[],  # No files
