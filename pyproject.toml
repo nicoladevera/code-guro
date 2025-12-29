@@ -80,4 +80,4 @@ target-version = "py38"
 
 [tool.ruff.lint]
 select = ["E", "F", "W", "I", "UP", "B", "C4"]
-ignore = ["E501"]
+ignore = ["E501", "UP045"]  # UP045 suggests X | None syntax which is Python 3.10+
