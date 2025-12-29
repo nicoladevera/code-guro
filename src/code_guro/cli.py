@@ -155,7 +155,9 @@ def analyze(path: str, markdown_only: bool):
             console.print(f"    [cyan]markdown/[/cyan] ({len(md_files)} files)")
             console.print(f"    [cyan]html/[/cyan] ({len(html_files)} files)")
             console.print()
-            console.print(f"[dim]Open {html_dir}/00-overview.html in your browser for the best experience![/dim]")
+            console.print(
+                f"[dim]Open {html_dir}/00-overview.html in your browser for the best experience![/dim]"
+            )
 
         console.print()
 
@@ -187,7 +189,6 @@ def convert(output_dir: str):
 
         code-guro convert /path/to/output
     """
-    from code_guro.html_converter import convert_directory_to_html
 
     output_path = Path(output_dir).resolve()
 
@@ -199,7 +200,9 @@ def convert(output_dir: str):
     if not output_path.exists():
         console.print(f"[red]Error:[/red] Directory not found: {output_dir}")
         console.print()
-        console.print("Run [bold cyan]code-guro analyze[/bold cyan] first to generate documentation.")
+        console.print(
+            "Run [bold cyan]code-guro analyze[/bold cyan] first to generate documentation."
+        )
         sys.exit(1)
 
     if not output_path.is_dir():
@@ -216,7 +219,7 @@ def convert(output_dir: str):
 
     try:
         console.print(f"[dim]Converting {len(md_files)} markdown file(s) to HTML...[/dim]")
-        console.print(f"[dim]Organizing files into subdirectories...[/dim]")
+        console.print("[dim]Organizing files into subdirectories...[/dim]")
         console.print()
 
         # Create subdirectories
@@ -227,12 +230,14 @@ def convert(output_dir: str):
 
         # Move markdown files to markdown/ subdirectory
         import shutil
+
         for md_file in md_files:
             dest = markdown_dir / md_file.name
             shutil.move(str(md_file), str(dest))
 
         # Convert markdown to HTML in html/ subdirectory
         from code_guro.html_converter import convert_directory_to_html_organized
+
         convert_directory_to_html_organized(markdown_dir, html_dir)
 
         # List generated files
