@@ -29,6 +29,27 @@ pip3 install code-guro
 - Internet connection (for Claude API calls)
 - Claude API key from [console.anthropic.com](https://console.anthropic.com)
 
+## Upgrading
+
+To upgrade to the latest version:
+
+```bash
+pip3 install --upgrade code-guro
+```
+
+To check your current version:
+
+```bash
+code-guro --version
+```
+
+**What's new in recent versions:**
+- **v0.3.0** - Redesigned HTML output with modern aesthetic, improved accessibility
+- **v0.2.0** - Dual-format output (HTML + markdown), chunked analysis for large codebases
+- **v0.1.0** - Initial release
+
+See [CHANGELOG.md](CHANGELOG.md) for detailed release notes.
+
 ## Quick Start
 
 ### 1. Configure your API key
