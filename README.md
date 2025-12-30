@@ -59,6 +59,7 @@ code-guro --version
 **Note:** If you have multiple installations (user-level, venv, system-wide), you may need to upgrade each separately or uninstall duplicates. Run `which code-guro` to see which installation is being used.
 
 **What's new in recent versions:**
+- **v0.4.1** - Fixed version string display issue (hotfix for v0.4.0)
 - **v0.4.0** - Left sidebar navigation, improved dark mode for Mermaid diagrams, enhanced mobile UX
 - **v0.3.1** - Fixed section 04 generation for large codebases, improved HTML output cleanliness
 - **v0.3.0** - Redesigned HTML output with modern aesthetic, improved accessibility

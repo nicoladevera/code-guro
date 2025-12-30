@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.4.1] - 2025-12-30
+
+### Fixed
+- **Version string mismatch**: Fixed `code-guro --version` displaying incorrect version (0.3.1 instead of 0.4.x)
+  - Updated `__version__` in `src/code_guro/__init__.py` to match package version
+  - This was a packaging oversight in v0.4.0 where the version string in the source code wasn't updated
+
 ## [0.4.0] - 2025-12-30
 
 ### Changed
@@ -92,7 +99,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Cost estimation with confirmation for large codebases
 - Secure API key storage in `~/.config/code-guro/`
 
-[Unreleased]: https://github.com/nicoladevera/code-guro/compare/v0.4.0...HEAD
+[Unreleased]: https://github.com/nicoladevera/code-guro/compare/v0.4.1...HEAD
+[0.4.1]: https://github.com/nicoladevera/code-guro/compare/v0.4.0...v0.4.1
 [0.4.0]: https://github.com/nicoladevera/code-guro/compare/v0.3.1...v0.4.0
 [0.3.1]: https://github.com/nicoladevera/code-guro/compare/v0.3.0...v0.3.1
 [0.3.0]: https://github.com/nicoladevera/code-guro/compare/v0.2.0...v0.3.0
