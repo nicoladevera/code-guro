@@ -143,3 +143,5 @@ cython_debug/
 
 # Project specific
 code-guro-output/
+
+# Note: assets/ folder is intentionally tracked (contains README screenshots)

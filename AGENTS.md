@@ -65,6 +65,7 @@ code-guro/
 ├── tests/                   # Additional test directory
 │   ├── __init__.py
 │   └── integration/         # Integration tests
+├── assets/                  # Documentation assets (screenshots, images)
 ├── rules/                   # PRD and development guidelines
 ├── tasks/                   # Project task lists and documentation
 ├── pyproject.toml           # Project configuration (dependencies, tools)
