@@ -165,7 +165,7 @@ class TestConvertFileToHtml:
         html_content = convert_file_to_html(files[0], files)
 
         # Verify navigation is present
-        assert "<nav>" in html_content
+        assert "<nav" in html_content
         assert "<ul>" in html_content
 
         # Verify links to all files are present
@@ -312,7 +312,7 @@ graph TD
         # Check each HTML file has navigation
         for html_file in html_dir.glob("*.html"):
             html_content = html_file.read_text()
-            assert "<nav>" in html_content
+            assert "<nav" in html_content
             assert "<ul>" in html_content
 
             # Should link to all other files

@@ -12,7 +12,7 @@ from rich.console import Console
 console = Console()
 
 # HTML template with embedded CSS - Yuno-inspired modern design
-HTML_TEMPLATE = """<!DOCTYPE html>
+HTML_TEMPLATE = r"""<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
@@ -64,6 +64,15 @@ HTML_TEMPLATE = """<!DOCTYPE html>
                 --shadow-medium: 0 4px 20px rgba(0, 0, 0, 0.25);
                 --shadow-elevated: 0 8px 32px rgba(0, 0, 0, 0.3);
             }}
+
+            /* Sidebar dark mode adjustments */
+            .sidebar {{
+                border-right-color: var(--border-color);
+            }}
+
+            .sidebar-overlay {{
+                background-color: rgba(0, 0, 0, 0.7);
+            }}
         }}
 
         * {{
@@ -83,75 +92,232 @@ HTML_TEMPLATE = """<!DOCTYPE html>
             color: var(--text-secondary);
             background-color: var(--bg-page);
             min-height: 100vh;
+            display: flex;
             -webkit-font-smoothing: antialiased;
             -moz-osx-font-smoothing: grayscale;
         }}
 
-        .page-wrapper {{
-            max-width: 1200px;
-            margin: 0 auto;
-            padding: 2rem;
+        /* Hide toggle checkbox */
+        .nav-toggle {{
+            display: none;
         }}
 
-        /* Navigation */
-        .nav-container {{
-            background-color: var(--bg-card);
-            border-radius: var(--radius-lg);
-            padding: 1rem 1.5rem;
-            margin-bottom: 2rem;
-            box-shadow: var(--shadow-soft);
-            position: sticky;
-            top: 1rem;
-            z-index: 100;
-            backdrop-filter: blur(10px);
-        }}
-
-        nav ul {{
-            list-style: none;
+        /* Main content wrapper */
+        .main-wrapper {{
+            flex: 1;
             display: flex;
-            flex-wrap: wrap;
-            gap: 0.5rem;
-            align-items: center;
+            flex-direction: column;
+            min-height: 100vh;
+            margin-left: 280px;
+            padding: 0 2rem;
+            transition: margin-left 0.3s ease;
         }}
 
-        nav li {{
+        /* Sidebar container */
+        .sidebar {{
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 280px;
+            height: 100vh;
+            background-color: var(--bg-card);
+            border-right: 1px solid var(--border-light);
+            box-shadow: var(--shadow-medium);
+            z-index: 1000;
+            display: flex;
+            flex-direction: column;
+            overflow-y: auto;
+            overflow-x: hidden;
+            transition: transform 0.3s ease;
+        }}
+
+        /* Sidebar header */
+        .sidebar-header {{
+            padding: 1.5rem;
+            border-bottom: 1px solid var(--border-light);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background-color: var(--bg-card);
+            position: sticky;
+            top: 0;
+            z-index: 10;
+        }}
+
+        .sidebar-title {{
+            font-family: 'Fraunces', Georgia, serif;
+            font-size: 1.25rem;
+            font-weight: 700;
+            color: var(--accent-primary);
             margin: 0;
         }}
 
-        nav a {{
-            display: inline-block;
-            padding: 0.5rem 1rem;
-            font-size: 0.875rem;
+        .close-btn {{
+            display: none;
+            font-size: 2rem;
+            color: var(--text-muted);
+            cursor: pointer;
+            line-height: 1;
+            padding: 0.25rem;
+            transition: color 0.2s ease;
+        }}
+
+        .close-btn:hover {{
+            color: var(--accent-primary);
+        }}
+
+        /* Sidebar navigation */
+        .sidebar-nav {{
+            flex: 1;
+            padding: 1rem 0;
+        }}
+
+        .sidebar-nav ul {{
+            list-style: none;
+            padding: 0;
+            margin: 0;
+        }}
+
+        .sidebar-nav li {{
+            margin: 0;
+        }}
+
+        .sidebar-nav a {{
+            display: block;
+            padding: 0.75rem 1.5rem;
+            font-size: 0.9375rem;
             font-weight: 500;
             color: var(--text-secondary);
             text-decoration: none;
-            border-radius: var(--radius-pill);
+            border-left: 3px solid transparent;
             transition: all 0.2s ease;
-            border: 1px solid transparent;
         }}
 
-        nav a:hover {{
-            color: var(--accent-primary);
+        .sidebar-nav a:hover {{
             background-color: var(--bg-card-alt);
-            border-color: var(--border-light);
+            color: var(--accent-primary);
+            border-left-color: var(--accent-secondary);
         }}
 
-        nav a:focus {{
+        .sidebar-nav a:focus {{
             outline: 2px solid var(--accent-secondary);
-            outline-offset: 2px;
+            outline-offset: -2px;
         }}
 
-        nav a.current {{
-            background-color: var(--accent-primary);
-            color: var(--bg-card);
+        .sidebar-nav a.current {{
+            background-color: var(--bg-card-alt);
+            color: var(--accent-primary);
+            border-left-color: var(--accent-primary);
             font-weight: 600;
+        }}
+
+        /* Hamburger toggle button */
+        .nav-toggle-label {{
+            display: none;
+            position: fixed;
+            top: 1rem;
+            left: 1rem;
+            z-index: 1001;
+            cursor: pointer;
+            padding: 0.5rem;
+            background-color: var(--bg-card);
+            border-radius: var(--radius-md);
+            box-shadow: var(--shadow-soft);
+            border: 1px solid var(--border-light);
+            transition: all 0.2s ease;
+        }}
+
+        .nav-toggle-label:hover {{
+            background-color: var(--bg-card-alt);
+            box-shadow: var(--shadow-medium);
+        }}
+
+        .hamburger-icon {{
+            display: block;
+            width: 24px;
+            height: 20px;
+            position: relative;
+        }}
+
+        .hamburger-icon span {{
+            display: block;
+            position: absolute;
+            height: 3px;
+            width: 100%;
+            background-color: var(--text-primary);
+            border-radius: 2px;
+            opacity: 1;
+            left: 0;
+            transform: rotate(0deg);
+            transition: 0.25s ease-in-out;
+        }}
+
+        .hamburger-icon span:nth-child(1) {{
+            top: 0;
+        }}
+
+        .hamburger-icon span:nth-child(2) {{
+            top: 8px;
+        }}
+
+        .hamburger-icon span:nth-child(3) {{
+            top: 16px;
+        }}
+
+        /* Hide hamburger when sidebar is open (only show close button inside sidebar) */
+        .nav-toggle:checked ~ .nav-toggle-label {{
+            display: none;
+        }}
+
+        /* Mobile overlay backdrop */
+        .sidebar-overlay {{
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(26, 26, 46, 0.5);
+            z-index: 999;
+            cursor: pointer;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.3s ease;
+        }}
+
+        /* Custom scrollbar for sidebar */
+        .sidebar::-webkit-scrollbar {{
+            width: 6px;
+        }}
+
+        .sidebar::-webkit-scrollbar-track {{
+            background: var(--bg-card);
+        }}
+
+        .sidebar::-webkit-scrollbar-thumb {{
+            background: var(--border-color);
+            border-radius: 3px;
+        }}
+
+        .sidebar::-webkit-scrollbar-thumb:hover {{
+            background: var(--text-muted);
+        }}
+
+        /* Firefox scrollbar */
+        .sidebar {{
+            scrollbar-width: thin;
+            scrollbar-color: var(--border-color) var(--bg-card);
         }}
 
         /* Main content card */
         main {{
+            flex: 1;
+            max-width: 1200px;
+            margin: 2rem auto;
+            width: 100%;
+            padding: 3rem;
             background-color: var(--bg-card);
             border-radius: var(--radius-xl);
-            padding: 3rem;
             box-shadow: var(--shadow-medium);
         }}
 
@@ -338,6 +504,30 @@ HTML_TEMPLATE = """<!DOCTYPE html>
             border: 1px solid var(--border-light);
         }}
 
+        /* Force dark text for light-colored Mermaid nodes in dark mode */
+        @media (prefers-color-scheme: dark) {{
+            /* Target light orange nodes */
+            .mermaid svg .node rect[style*="rgb(255, 153, 102)"] ~ .nodeLabel,
+            .mermaid svg .node rect[style*="rgb(255, 153, 102)"] ~ text,
+            .mermaid svg .node polygon[style*="rgb(255, 153, 102)"] ~ .nodeLabel,
+            .mermaid svg .node polygon[style*="rgb(255, 153, 102)"] ~ text,
+            /* Target light purple/lavender nodes */
+            .mermaid svg .node rect[style*="rgb(180, 167, 214)"] ~ .nodeLabel,
+            .mermaid svg .node rect[style*="rgb(180, 167, 214)"] ~ text,
+            .mermaid svg .node polygon[style*="rgb(180, 167, 214)"] ~ .nodeLabel,
+            .mermaid svg .node polygon[style*="rgb(180, 167, 214)"] ~ text,
+            /* Target light teal/cyan nodes */
+            .mermaid svg .node rect[style*="rgb(100, 181, 198)"] ~ .nodeLabel,
+            .mermaid svg .node rect[style*="rgb(100, 181, 198)"] ~ text,
+            .mermaid svg .node polygon[style*="rgb(100, 181, 198)"] ~ .nodeLabel,
+            .mermaid svg .node polygon[style*="rgb(100, 181, 198)"] ~ text,
+            /* Target any light-colored backgrounds (fallback) */
+            .mermaid svg .nodeLabel,
+            .mermaid svg text.nodeLabel {{
+                fill: #1a1a2e !important;
+            }}
+        }}
+
         /* Horizontal rule */
         hr {{
             border: none;
@@ -382,7 +572,7 @@ HTML_TEMPLATE = """<!DOCTYPE html>
             color: var(--bg-card);
             padding: 0.75rem 1.5rem;
             border-radius: 0 0 var(--radius-md) 0;
-            z-index: 1000;
+            z-index: 1002;
             font-weight: 600;
         }}
 
@@ -405,37 +595,55 @@ HTML_TEMPLATE = """<!DOCTYPE html>
 
         /* Responsive Design */
         @media (max-width: 1024px) {{
-            .page-wrapper {{
-                padding: 1.5rem;
+            .main-wrapper {{
+                margin-left: 280px;
+                padding: 0 1.5rem;
             }}
 
             main {{
                 padding: 2rem;
+                margin: 1.5rem 0;
             }}
         }}
 
         @media (max-width: 768px) {{
-            .page-wrapper {{
-                padding: 1rem;
+            /* Show hamburger button */
+            .nav-toggle-label {{
+                display: block;
             }}
 
-            .nav-container {{
-                position: relative;
-                top: 0;
-                padding: 1rem;
+            /* Show close button in sidebar */
+            .close-btn {{
+                display: block;
             }}
 
-            nav ul {{
-                gap: 0.375rem;
+            /* Remove main content margin (sidebar overlays instead) */
+            .main-wrapper {{
+                margin-left: 0;
+                padding: 4rem 1rem 0 1rem;
             }}
 
-            nav a {{
-                padding: 0.375rem 0.75rem;
-                font-size: 0.8125rem;
+            /* Hide sidebar by default on mobile */
+            .sidebar {{
+                transform: translateX(-100%);
             }}
 
+            /* Show sidebar when toggle is checked */
+            .nav-toggle:checked ~ .sidebar {{
+                transform: translateX(0);
+            }}
+
+            /* Show overlay when sidebar is open */
+            .nav-toggle:checked ~ .sidebar-overlay {{
+                display: block;
+                opacity: 1;
+                pointer-events: auto;
+            }}
+
+            /* Adjust main content */
             main {{
                 padding: 1.5rem;
+                margin: 1rem 0;
                 border-radius: var(--radius-lg);
             }}
 
@@ -473,18 +681,18 @@ HTML_TEMPLATE = """<!DOCTYPE html>
         }}
 
         @media (max-width: 480px) {{
-            nav ul {{
-                flex-direction: column;
-                align-items: stretch;
+            .sidebar {{
+                width: 85%;
+                max-width: 320px;
             }}
 
-            nav a {{
-                display: block;
-                text-align: center;
+            .main-wrapper {{
+                padding: 4rem 0.5rem 0 0.5rem;
             }}
 
             main {{
                 padding: 1.25rem;
+                margin: 0.5rem 0;
             }}
 
             h2 {{
@@ -499,13 +707,18 @@ HTML_TEMPLATE = """<!DOCTYPE html>
                 color: black;
             }}
 
-            .nav-container {{
+            .sidebar, .nav-toggle-label, .sidebar-overlay {{
                 display: none;
+            }}
+
+            .main-wrapper {{
+                margin-left: 0;
             }}
 
             main {{
                 box-shadow: none;
                 padding: 0;
+                margin: 0;
             }}
 
             a {{
@@ -541,15 +754,36 @@ HTML_TEMPLATE = """<!DOCTYPE html>
 <body>
     <a href="#main-content" class="skip-link">Skip to main content</a>
 
-    <div class="page-wrapper">
-        <div class="nav-container" role="navigation" aria-label="Documentation navigation">
-            <nav>
-                <ul>
-                    {navigation}
-                </ul>
-            </nav>
-        </div>
+    <!-- Hamburger toggle (CSS checkbox hack - no JS needed) -->
+    <input type="checkbox" id="nav-toggle" class="nav-toggle" aria-label="Toggle navigation menu">
+    <label for="nav-toggle" class="nav-toggle-label" aria-label="Open navigation menu">
+        <span class="hamburger-icon">
+            <span></span>
+            <span></span>
+            <span></span>
+        </span>
+    </label>
 
+    <!-- Sidebar navigation -->
+    <aside class="sidebar" role="navigation" aria-label="Documentation navigation">
+        <div class="sidebar-header">
+            <h2 class="sidebar-title">Code Guro</h2>
+            <label for="nav-toggle" class="close-btn" aria-label="Close navigation menu">
+                <span>&times;</span>
+            </label>
+        </div>
+        <nav class="sidebar-nav">
+            <ul>
+                {navigation}
+            </ul>
+        </nav>
+    </aside>
+
+    <!-- Mobile overlay backdrop -->
+    <label for="nav-toggle" class="sidebar-overlay" aria-label="Close navigation menu"></label>
+
+    <!-- Main content wrapper -->
+    <div class="main-wrapper">
         <main id="main-content" role="main">
             {content}
         </main>
@@ -565,6 +799,15 @@ HTML_TEMPLATE = """<!DOCTYPE html>
         mermaid.initialize({{
             startOnLoad: true,
             theme: isDarkMode ? 'dark' : 'default',
+            themeVariables: isDarkMode ? {{
+                primaryTextColor: '#1a1a2e',
+                secondaryTextColor: '#1a1a2e',
+                tertiaryTextColor: '#f0f0f6',
+                primaryColor: '#ff9966',
+                primaryBorderColor: '#ff7733',
+                secondaryColor: '#b4a7d6',
+                secondaryBorderColor: '#9575cd'
+            }} : {{}},
             securityLevel: 'loose',
             fontFamily: 'Inter, -apple-system, BlinkMacSystemFont, sans-serif',
             flowchart: {{
@@ -584,12 +827,66 @@ HTML_TEMPLATE = """<!DOCTYPE html>
             pre.parentElement.replaceChild(div, pre);
         }});
 
+        // Fix text colors in dark mode Mermaid diagrams after rendering
+        function fixMermaidTextColors() {{
+            if (!window.matchMedia('(prefers-color-scheme: dark)').matches) return;
+
+            document.querySelectorAll('.mermaid svg').forEach(function(svg) {{
+                // Get all text elements within nodes
+                svg.querySelectorAll('.node text, .nodeLabel, text').forEach(function(textEl) {{
+                    // Get the parent node's background color
+                    const parentNode = textEl.closest('.node');
+                    if (!parentNode) return;
+
+                    // Find rect or polygon shape in the node
+                    const shape = parentNode.querySelector('rect, polygon');
+                    if (!shape) return;
+
+                    const fill = shape.style.fill || shape.getAttribute('fill');
+                    if (!fill) return;
+
+                    // Convert to RGB to analyze brightness
+                    const rgb = fill.match(/rgb\((\d+),\s*(\d+),\s*(\d+)\)/);
+                    if (!rgb) return;
+
+                    const r = parseInt(rgb[1]);
+                    const g = parseInt(rgb[2]);
+                    const b = parseInt(rgb[3]);
+
+                    // Calculate relative luminance
+                    const luminance = (0.299 * r + 0.587 * g + 0.114 * b) / 255;
+
+                    // If background is light (luminance > 0.5), use dark text
+                    if (luminance > 0.5) {{
+                        textEl.style.fill = '#1a1a2e';
+                        textEl.style.color = '#1a1a2e';
+                    }} else {{
+                        // Dark background gets light text
+                        textEl.style.fill = '#f0f0f6';
+                        textEl.style.color = '#f0f0f6';
+                    }}
+                }});
+            }});
+        }}
+
+        // Run after Mermaid finishes rendering
+        setTimeout(fixMermaidTextColors, 100);
+
         // Listen for theme changes and re-render mermaid diagrams
         window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', function(e) {{
             const newTheme = e.matches ? 'dark' : 'default';
             mermaid.initialize({{
                 startOnLoad: false,
                 theme: newTheme,
+                themeVariables: e.matches ? {{
+                    primaryTextColor: '#1a1a2e',
+                    secondaryTextColor: '#1a1a2e',
+                    tertiaryTextColor: '#f0f0f6',
+                    primaryColor: '#ff9966',
+                    primaryBorderColor: '#ff7733',
+                    secondaryColor: '#b4a7d6',
+                    secondaryBorderColor: '#9575cd'
+                }} : {{}},
                 securityLevel: 'loose'
             }});
             document.querySelectorAll('.mermaid').forEach(function(diagram) {{
@@ -598,6 +895,8 @@ HTML_TEMPLATE = """<!DOCTYPE html>
                 diagram.innerHTML = code;
             }});
             mermaid.init(undefined, '.mermaid');
+            // Fix text colors after re-rendering
+            setTimeout(fixMermaidTextColors, 100);
         }});
     </script>
 </body>
