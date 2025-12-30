@@ -694,7 +694,10 @@ def convert_directory_to_html(output_dir: Path) -> None:
 
     md_files = list(output_dir.glob("*.md"))
 
-    if not md_files:
+    # Filter out internal files (prefixed with _) from user-facing HTML output
+    user_facing_files = [f for f in md_files if not f.name.startswith("_")]
+
+    if not user_facing_files:
         console.print("[yellow]No markdown files found to convert.[/yellow]")
         return
 
@@ -704,13 +707,13 @@ def convert_directory_to_html(output_dir: Path) -> None:
         console=console,
         transient=True,
     ) as progress:
-        task = progress.add_task("Converting to HTML...", total=len(md_files))
+        task = progress.add_task("Converting to HTML...", total=len(user_facing_files))
 
-        for md_file in md_files:
+        for md_file in user_facing_files:
             progress.update(task, description=f"Converting {md_file.name}...")
 
             try:
-                html_content = convert_file_to_html(md_file, md_files)
+                html_content = convert_file_to_html(md_file, user_facing_files)
                 html_path = md_file.with_suffix(".html")
                 html_path.write_text(html_content)
             except Exception as e:
@@ -718,7 +721,7 @@ def convert_directory_to_html(output_dir: Path) -> None:
 
             progress.advance(task)
 
-    console.print(f"[green]Converted {len(md_files)} files to HTML[/green]")
+    console.print(f"[green]Converted {len(user_facing_files)} files to HTML[/green]")
 
 
 def convert_directory_to_html_organized(markdown_dir: Path, html_dir: Path) -> None:
@@ -732,7 +735,10 @@ def convert_directory_to_html_organized(markdown_dir: Path, html_dir: Path) -> N
 
     md_files = list(markdown_dir.glob("*.md"))
 
-    if not md_files:
+    # Filter out internal files (prefixed with _) from user-facing HTML output
+    user_facing_files = [f for f in md_files if not f.name.startswith("_")]
+
+    if not user_facing_files:
         console.print("[yellow]No markdown files found to convert.[/yellow]")
         return
 
@@ -742,13 +748,13 @@ def convert_directory_to_html_organized(markdown_dir: Path, html_dir: Path) -> N
         console=console,
         transient=True,
     ) as progress:
-        task = progress.add_task("Converting to HTML...", total=len(md_files))
+        task = progress.add_task("Converting to HTML...", total=len(user_facing_files))
 
-        for md_file in md_files:
+        for md_file in user_facing_files:
             progress.update(task, description=f"Converting {md_file.name}...")
 
             try:
-                html_content = convert_file_to_html(md_file, md_files)
+                html_content = convert_file_to_html(md_file, user_facing_files)
                 html_path = html_dir / md_file.with_suffix(".html").name
                 html_path.write_text(html_content)
             except Exception as e:
@@ -756,4 +762,4 @@ def convert_directory_to_html_organized(markdown_dir: Path, html_dir: Path) -> N
 
             progress.advance(task)
 
-    console.print(f"[green]Converted {len(md_files)} files to HTML[/green]")
+    console.print(f"[green]Converted {len(user_facing_files)} files to HTML[/green]")
