@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+- **Section 04 (Module Deep Dives) now generated for large codebases**: Previously, chunked analysis skipped section 04 entirely. Now generates deep dive documents for major modules even when using chunked analysis.
+- **Internal analysis files excluded from HTML output**: Files like `_analysis-notes.md` and `_chunk-XX-analysis.md` are now kept in the markdown folder for debugging but excluded from user-facing HTML navigation, resulting in cleaner output for large codebases.
+
 ## [0.3.0] - 2025-12-30
 
 ### Changed

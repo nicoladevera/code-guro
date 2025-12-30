@@ -337,6 +337,61 @@ graph TD
         # Should still create HTML file
         assert (html_dir / "test.html").exists()
 
+    def test_excludes_underscore_prefixed_files_from_html(self, tmp_path):
+        """Should exclude files starting with _ from HTML output."""
+        markdown_dir = tmp_path / "markdown"
+        html_dir = tmp_path / "html"
+        markdown_dir.mkdir()
+        html_dir.mkdir()
+
+        # Create regular markdown files
+        (markdown_dir / "00-overview.md").write_text("# Overview")
+        (markdown_dir / "01-getting-oriented.md").write_text("# Getting Oriented")
+
+        # Create underscore-prefixed files (internal/debug files)
+        (markdown_dir / "_analysis-notes.md").write_text("# Analysis Notes")
+        (markdown_dir / "_chunk-01-analysis.md").write_text("# Chunk 1")
+        (markdown_dir / "_chunk-02-analysis.md").write_text("# Chunk 2")
+
+        # Convert
+        convert_directory_to_html_organized(markdown_dir, html_dir)
+
+        # Verify only user-facing HTML files created
+        html_files = list(html_dir.glob("*.html"))
+        assert len(html_files) == 2
+
+        # Verify underscore-prefixed files NOT converted
+        assert (html_dir / "00-overview.html").exists()
+        assert (html_dir / "01-getting-oriented.html").exists()
+        assert not (html_dir / "_analysis-notes.html").exists()
+        assert not (html_dir / "_chunk-01-analysis.html").exists()
+        assert not (html_dir / "_chunk-02-analysis.html").exists()
+
+        # Verify markdown files still preserved
+        assert (markdown_dir / "_analysis-notes.md").exists()
+        assert (markdown_dir / "_chunk-01-analysis.md").exists()
+
+    def test_underscore_files_excluded_from_navigation(self, tmp_path):
+        """Should not include underscore-prefixed files in navigation."""
+        markdown_dir = tmp_path / "markdown"
+        html_dir = tmp_path / "html"
+        markdown_dir.mkdir()
+        html_dir.mkdir()
+
+        # Create files
+        (markdown_dir / "00-overview.md").write_text("# Overview")
+        (markdown_dir / "_analysis-notes.md").write_text("# Analysis Notes")
+
+        # Convert
+        convert_directory_to_html_organized(markdown_dir, html_dir)
+
+        # Read generated HTML
+        html_content = (html_dir / "00-overview.html").read_text()
+
+        # Navigation should only contain user-facing files
+        assert "00-overview.html" in html_content
+        assert "_analysis-notes.html" not in html_content
+
 
 class TestConvertDirectoryToHtml:
     """Tests for the legacy convert_directory_to_html function."""

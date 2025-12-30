@@ -347,6 +347,18 @@ def generate_chunked_documentation(
     next_steps = generate_next_steps(result)
     (output_dir / "06-next-steps.md").write_text(next_steps)
 
+    # Generate deep dives for modules (section 04)
+    console.print("[dim]Generating module deep dives...[/dim]")
+    modules = identify_modules(result)
+    generated_deep_dives = []
+
+    for module in modules:
+        content = generate_deep_dive(module, result)
+        filename = f"04-deep-dive-{module['name'].lower().replace(' ', '-')}.md"
+        filepath = output_dir / filename
+        filepath.write_text(content)
+        generated_deep_dives.append(filename)
+
     # Add a note about chunked analysis
     note_content = f"""# Analysis Notes
 
@@ -384,6 +396,7 @@ The following chunks were analyzed:
         "01-getting-oriented.md",
         "02-architecture.md",
         "03-core-files.md",
+        *generated_deep_dives,
         "05-quality-analysis.md",
         "06-next-steps.md",
         "_analysis-notes.md",

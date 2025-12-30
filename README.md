@@ -127,6 +127,8 @@ Each document includes:
 
 **Recommended:** Open the HTML files in your browser for the best experience with fully rendered Mermaid diagrams, styling, and navigation.
 
+**Note for large codebases (>150K tokens):** The markdown folder may also contain internal analysis files (prefixed with `_`) such as `_analysis-notes.md` and `_chunk-XX-analysis.md`. These files document the chunked analysis process and are kept for debugging purposes, but are excluded from the user-facing HTML output to keep navigation clean.
+
 ### Git Integration
 
 Since `code-guro-output/` contains generated documentation that can be recreated at any time, you may want to add it to your `.gitignore`:
