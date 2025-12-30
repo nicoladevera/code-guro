@@ -47,7 +47,7 @@ This document provides essential context for AI agents and developers working wi
 ```
 code-guro/
 ├── src/code_guro/           # Main application package
-│   ├── __init__.py          # Package version (0.1.0)
+│   ├── __init__.py          # Package version (0.4.1)
 │   ├── cli.py               # CLI entry point - Click commands
 │   ├── analyzer.py          # Codebase analysis engine
 │   ├── generator.py         # Documentation generation via Claude
