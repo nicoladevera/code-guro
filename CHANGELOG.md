@@ -7,6 +7,30 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.4.0] - 2025-12-30
+
+### Changed
+- **HTML UI Redesign**: Completely redesigned navigation and improved dark mode support
+  - Replaced top horizontal navigation bar with modern left sidebar navigation
+  - Sidebar navigation: Always visible on desktop (280px fixed width), collapsible hamburger menu on mobile
+  - Improved responsive behavior: Sidebar slides in from left on mobile with dark overlay backdrop
+  - Consistent spacing between sidebar and main content across all viewport sizes
+  - Single close button UX: Hamburger icon hidden when sidebar is open on mobile
+
+### Fixed
+- **Mermaid diagram dark mode text readability**: Light-colored diagram boxes (orange, purple, teal) now display dark text in dark mode instead of white text
+  - Implemented automatic text color detection based on background luminance
+  - Ensures WCAG AA contrast compliance (4.5:1 minimum) for all diagram nodes
+  - Works dynamically for any Mermaid diagram colors, not just specific predefined colors
+  - Text colors update automatically when system theme changes
+
+### Added
+- Accessibility improvements to sidebar navigation:
+  - ARIA labels for hamburger menu, close button, and overlay
+  - Keyboard-accessible navigation controls
+  - Focus indicators for all interactive elements
+  - CSS-only hamburger toggle (no JavaScript required for core functionality)
+
 ## [0.3.1] - 2025-12-30
 
 ### Fixed
@@ -68,7 +92,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Cost estimation with confirmation for large codebases
 - Secure API key storage in `~/.config/code-guro/`
 
-[Unreleased]: https://github.com/nicoladevera/code-guro/compare/v0.3.1...HEAD
+[Unreleased]: https://github.com/nicoladevera/code-guro/compare/v0.4.0...HEAD
+[0.4.0]: https://github.com/nicoladevera/code-guro/compare/v0.3.1...v0.4.0
 [0.3.1]: https://github.com/nicoladevera/code-guro/compare/v0.3.0...v0.3.1
 [0.3.0]: https://github.com/nicoladevera/code-guro/compare/v0.2.0...v0.3.0
 [0.2.0]: https://github.com/nicoladevera/code-guro/compare/v0.1.0...v0.2.0
