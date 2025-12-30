@@ -44,6 +44,7 @@ code-guro --version
 ```
 
 **What's new in recent versions:**
+- **v0.3.1** - Fixed section 04 generation for large codebases, improved HTML output cleanliness
 - **v0.3.0** - Redesigned HTML output with modern aesthetic, improved accessibility
 - **v0.2.0** - Dual-format output (HTML + markdown), chunked analysis for large codebases
 - **v0.1.0** - Initial release

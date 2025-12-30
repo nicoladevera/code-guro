@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.3.1] - 2025-12-30
+
 ### Fixed
 - **Section 04 (Module Deep Dives) now generated for large codebases**: Previously, chunked analysis skipped section 04 entirely. Now generates deep dive documents for major modules even when using chunked analysis.
 - **Internal analysis files excluded from HTML output**: Files like `_analysis-notes.md` and `_chunk-XX-analysis.md` are now kept in the markdown folder for debugging but excluded from user-facing HTML navigation, resulting in cleaner output for large codebases.
@@ -66,7 +68,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Cost estimation with confirmation for large codebases
 - Secure API key storage in `~/.config/code-guro/`
 
-[Unreleased]: https://github.com/nicoladevera/code-guro/compare/v0.3.0...HEAD
+[Unreleased]: https://github.com/nicoladevera/code-guro/compare/v0.3.1...HEAD
+[0.3.1]: https://github.com/nicoladevera/code-guro/compare/v0.3.0...v0.3.1
 [0.3.0]: https://github.com/nicoladevera/code-guro/compare/v0.2.0...v0.3.0
 [0.2.0]: https://github.com/nicoladevera/code-guro/compare/v0.1.0...v0.2.0
 [0.1.0]: https://github.com/nicoladevera/code-guro/releases/tag/v0.1.0
