@@ -7,6 +7,28 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.3.0] - 2025-12-30
+
+### Changed
+- **HTML Redesign**: Complete visual overhaul of HTML output with modern, premium aesthetic
+  - New card-based layout with soft shadows and rounded corners
+  - Soft lavender-gray page background with white content cards
+  - Fraunces serif font for headings, Inter sans-serif for body text
+  - JetBrains Mono for code blocks
+  - Teal accent color for interactive elements and list markers
+  - Comprehensive light/dark theme support via CSS variables
+  - Sticky navigation bar with pill-shaped links
+
+### Added
+- Accessibility improvements for HTML output:
+  - Skip link for keyboard navigation
+  - ARIA labels and semantic roles
+  - Focus-visible indicators for keyboard users
+  - Reduced motion support (`prefers-reduced-motion`)
+  - Print styles for clean document printing
+- Responsive design optimized for mobile, tablet, and desktop viewports
+- Mermaid diagram theme now syncs with page theme (light/dark)
+
 ## [0.2.0] - 2025-12-29
 
 ### Added
@@ -40,6 +62,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Cost estimation with confirmation for large codebases
 - Secure API key storage in `~/.config/code-guro/`
 
-[Unreleased]: https://github.com/nicoladevera/code-guro/compare/v0.2.0...HEAD
+[Unreleased]: https://github.com/nicoladevera/code-guro/compare/v0.3.0...HEAD
+[0.3.0]: https://github.com/nicoladevera/code-guro/compare/v0.2.0...v0.3.0
 [0.2.0]: https://github.com/nicoladevera/code-guro/compare/v0.1.0...v0.2.0
 [0.1.0]: https://github.com/nicoladevera/code-guro/releases/tag/v0.1.0
