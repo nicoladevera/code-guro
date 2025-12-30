@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+- **Mermaid diagram syntax error**: Fixed flowchart diagrams failing to render with "Syntax error" in Mermaid v11.12.2
+  - Removed question marks from decision node text (changed `{Binary or Level?}` to `{Binary or Level}`)
+  - Removed parentheses from function call labels in node text (changed `[getData()]` to `[getData]`)
+  - Added comprehensive Mermaid syntax guidelines to AGENTS.md to prevent future issues
+  - Updated prompt templates with inline reminders about Mermaid best practices
+
 ## [0.4.1] - 2025-12-30
 
 ### Fixed

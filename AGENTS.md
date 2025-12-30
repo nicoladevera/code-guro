@@ -539,3 +539,61 @@ MODEL = "claude-sonnet-4-20250514"
 6. **HTML is the default format** - provides fully rendered Mermaid diagrams; markdown is for version control/GitHub viewing
 7. **Framework detection is extensible** - add new frameworks in `frameworks.py`
 8. **API key is stored securely** - mode 0o600 in user config directory
+
+---
+
+## Mermaid Diagram Guidelines
+
+When generating Mermaid diagrams in documentation (via Claude API prompts), follow these syntax rules to ensure compatibility with Mermaid.js v11.12+:
+
+### Decision Nodes (Diamond Shapes)
+
+**✅ CORRECT - Use curly braces for shape, avoid special characters in text:**
+```mermaid
+flowchart TD
+    A[Start] --> B{Binary or Level}
+    B -->|Option 1| C[Result]
+    B -->|Option 2| D[Other Result]
+```
+
+**❌ INCORRECT - Question marks in decision node text cause parsing errors:**
+```mermaid
+flowchart TD
+    A[Start] --> B{Binary or Level?}  # ❌ Question mark breaks parser
+```
+
+### Node Labels
+
+**✅ CORRECT - Keep labels simple, avoid special characters:**
+```mermaid
+flowchart TD
+    A[User Opens App] --> B[habitService.getHabits]
+    B --> C[Database]
+```
+
+**❌ INCORRECT - Parentheses and special chars can cause issues:**
+```mermaid
+flowchart TD
+    A[User Opens App] --> B[habitService.getHabits()]  # ❌ Parentheses may break
+```
+
+### General Best Practices
+
+1. **Avoid special characters in node text**: `?`, `!`, `()`, `[]` inside text can confuse the parser
+2. **Use edge labels for context**: Put descriptive text on arrows using `|label|` syntax
+3. **Keep node text concise**: Long text can cause rendering issues
+4. **Test locally**: Before committing, open generated HTML to verify diagrams render
+5. **Use simple shapes**: Stick to rectangles `[]`, diamonds `{}`, and rounded `()` for compatibility
+
+### Common Syntax Errors to Avoid
+
+| Issue | Example | Fix |
+|-------|---------|-----|
+| Special chars in decision nodes | `{Is it ready?}` | `{Is it ready}` |
+| Parentheses in labels | `[getData()]` | `[getData]` |
+| Unescaped quotes | `[User's data]` | `[User data]` or `["User's data"]` |
+| Missing arrow syntax | `A - B` | `A --> B` or `A --- B` |
+
+### Mermaid Version
+
+Code Guro's HTML output uses **Mermaid.js v11.12.2** from CDN. Always test diagrams against this version or newer.

@@ -142,6 +142,11 @@ graph LR
     A[User] --> B[Component]
 ```
 
+**Important:** When creating Mermaid diagrams:
+- Avoid special characters (?, !, etc.) in decision node text (use `{{Choice}}` not `{{Choice?}}`)
+- Keep node labels simple without parentheses (use `[getData]` not `[getData()]`)
+- Use edge labels for additional context: `A -->|label| B`
+
 ## Design Patterns
 Identify and explain any design patterns used:
 - Name each pattern
@@ -245,6 +250,8 @@ flowchart TD
     A[Input] --> B[Process]
     B --> C[Output]
 ```
+
+**Note:** Keep Mermaid syntax simple - avoid special characters like `?` in decision nodes and `()` in labels.
 
 ## Key Patterns
 Notable patterns or techniques used in this module.
