@@ -18,11 +18,17 @@ Code Guro analyzes a codebase and generates structured, beginner-friendly learni
 
 ## Installation
 
+**Recommended for production use:**
 ```bash
-pip3 install code-guro
+python3 -m pip install --user code-guro
 ```
 
-> **Note:** On some systems, you may need to use `pip3` instead of `pip` to install Python packages.
+**For development in a virtual environment:**
+```bash
+pip install code-guro
+```
+
+> **Note:** Using `--user` installs to your user directory and avoids conflicts with system packages. This is the recommended method for production use.
 
 **Requirements:**
 - Python 3.8 or higher
@@ -34,7 +40,14 @@ pip3 install code-guro
 To upgrade to the latest version:
 
 ```bash
-pip3 install --upgrade code-guro
+# If you installed with --user flag (recommended for production use)
+python3 -m pip install --upgrade --user code-guro
+
+# If you installed in a virtual environment
+pip install --upgrade code-guro
+
+# Force cache refresh if upgrade doesn't work
+python3 -m pip install --upgrade --no-cache-dir --user code-guro
 ```
 
 To check your current version:
@@ -42,6 +55,8 @@ To check your current version:
 ```bash
 code-guro --version
 ```
+
+**Note:** If you have multiple installations (user-level, venv, system-wide), you may need to upgrade each separately or uninstall duplicates. Run `which code-guro` to see which installation is being used.
 
 **What's new in recent versions:**
 - **v0.3.1** - Fixed section 04 generation for large codebases, improved HTML output cleanliness
