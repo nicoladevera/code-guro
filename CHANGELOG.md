@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- **Logo branding in HTML output**: Added Code Guro logo to sidebar navigation
+  - Logo automatically switches between light and dark versions based on system theme
+  - Base64 embedded for self-contained HTML files (no external dependencies)
+  - Optimized assets stored in `assets/` directory
+
 ### Fixed
 - **Mermaid diagram syntax error**: Fixed flowchart diagrams failing to render with "Syntax error" in Mermaid v11.12.2
   - Removed question marks from decision node text (changed `{Binary or Level?}` to `{Binary or Level}`)
