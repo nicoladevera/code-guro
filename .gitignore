@@ -144,4 +144,8 @@ cython_debug/
 # Project specific
 code-guro-output/
 
-# Note: assets/ folder is intentionally tracked (contains README screenshots)
+# Large logo source files (only optimized *-small.png versions are used)
+assets/logo-code-guro-light.png
+assets/logo-code-guro-dark.png
+
+# Note: assets/ folder is intentionally tracked (contains README screenshots and optimized logos)
