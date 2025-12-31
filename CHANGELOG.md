@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.4.2] - 2025-12-31
+
 ### Added
 - **Logo branding in HTML output**: Added Code Guro logo to sidebar navigation
   - Logo automatically switches between light and dark versions based on system theme
@@ -112,7 +114,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Cost estimation with confirmation for large codebases
 - Secure API key storage in `~/.config/code-guro/`
 
-[Unreleased]: https://github.com/nicoladevera/code-guro/compare/v0.4.1...HEAD
+[Unreleased]: https://github.com/nicoladevera/code-guro/compare/v0.4.2...HEAD
+[0.4.2]: https://github.com/nicoladevera/code-guro/compare/v0.4.1...v0.4.2
 [0.4.1]: https://github.com/nicoladevera/code-guro/compare/v0.4.0...v0.4.1
 [0.4.0]: https://github.com/nicoladevera/code-guro/compare/v0.3.1...v0.4.0
 [0.3.1]: https://github.com/nicoladevera/code-guro/compare/v0.3.0...v0.3.1
