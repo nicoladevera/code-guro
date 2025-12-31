@@ -9,7 +9,7 @@ description = "Understand codebases in minutes, powered by AI"
 readme = "README.md"
 license = {text = "MIT"}
 authors = [
-    {name = "Nicola de Vera", email = "nicola@example.com"}
+    {name = "Nicola de Vera", email = "nicoladv.writes@gmail.com"}
 ]
 keywords = ["cli", "code-analysis", "documentation", "learning", "ai"]
 classifiers = [
