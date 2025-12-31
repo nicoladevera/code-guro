@@ -1,4 +1,4 @@
-.PHONY: help install format lint test quality clean
+.PHONY: help install format lint test quality clean samples
 
 help:  ## Show this help message
 	@echo 'Usage: make [target]'
@@ -31,3 +31,8 @@ clean:  ## Clean up cache and build files
 	find . -type d -name .pytest_cache -exec rm -r {} +
 	find . -type d -name .ruff_cache -exec rm -r {} +
 	find . -type f -name '*.pyc' -delete
+
+samples:  ## Generate HTML from sample markdown files
+	@mkdir -p samples/html
+	python3 -c "from pathlib import Path; from code_guro.html_converter import convert_directory_to_html_organized; convert_directory_to_html_organized(Path('samples/markdown'), Path('samples/html'))"
+	@echo "✅ Sample HTML files generated in samples/html/"

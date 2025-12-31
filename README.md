@@ -168,15 +168,21 @@ Here's what the HTML documentation looks like when opened in your browser:
 
 ### Executive Summary View
 
-![Overview page showing executive summary of a habit tracking mobile app](./assets/screenshot-overview.png)
+![Overview page showing executive summary of Your Amazing App](./assets/screenshot-overview.png)
 
 The overview page provides a high-level summary of what the application does, its key features, and the technology stack used. Perfect for getting oriented quickly.
 
 ### Architecture Diagrams
 
-![Architecture page showing data flow patterns with Mermaid diagrams](./assets/screenshot-architecture.png)
+![Architecture page showing system architecture with Mermaid diagrams](./assets/screenshot-architecture.png)
 
-The architecture pages include fully-rendered Mermaid diagrams that visualize data flows, component relationships, and system patterns. These diagrams are interactive and help you understand how different parts of the codebase connect.
+The architecture pages include fully-rendered Mermaid diagrams that visualize system architecture, component relationships, and data flows. These diagrams help you understand how different parts of the codebase connect.
+
+### Deep Dive Analysis
+
+![Deep dive page showing detailed API layer analysis](./assets/screenshot-deep-dive.png)
+
+The deep dive pages provide in-depth analysis of specific modules, including API endpoints, request/response examples, and sequence diagrams showing how data flows through the system.
 
 ## Commands
 

@@ -144,6 +144,10 @@ cython_debug/
 # Project specific
 code-guro-output/
 
+# Sample outputs (local reference only)
+samples/markdown/
+samples/html/
+
 # Large logo source files (only optimized *-small.png versions are used)
 assets/logo-code-guro-light.png
 assets/logo-code-guro-dark.png
