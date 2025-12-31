@@ -66,6 +66,10 @@ code-guro/
 │   ├── __init__.py
 │   └── integration/         # Integration tests
 ├── assets/                  # Documentation assets (screenshots, images)
+├── samples/                 # Local reference outputs (git-ignored content)
+│   ├── README.md            # Purpose & regeneration docs (committed)
+│   ├── markdown/            # Sample markdown outputs (git-ignored)
+│   └── html/                # Sample HTML outputs (git-ignored)
 ├── rules/                   # PRD and development guidelines
 ├── tasks/                   # Project task lists and documentation
 ├── pyproject.toml           # Project configuration (dependencies, tools)
@@ -509,6 +513,7 @@ make quality
 | Update error messages | `src/code_guro/errors.py` |
 | Modify output format | `src/code_guro/generator.py` |
 | Update HTML conversion | `src/code_guro/html_converter.py` |
+| View sample outputs | `samples/markdown/`, `samples/html/` |
 | Update pre-commit hooks | `.pre-commit-config.yaml` |
 | Add make commands | `Makefile` |
 
@@ -539,6 +544,7 @@ MODEL = "claude-sonnet-4-20250514"
 6. **HTML is the default format** - provides fully rendered Mermaid diagrams; markdown is for version control/GitHub viewing
 7. **Framework detection is extensible** - add new frameworks in `frameworks.py`
 8. **API key is stored securely** - mode 0o600 in user config directory
+9. **Reference samples available** - the `samples/` directory contains example Markdown and HTML outputs for "Your Amazing App". Use these as reference when modifying `html_converter.py`, `generator.py`, or prompt templates. Regenerate HTML with `make samples`.
 
 ---
 
