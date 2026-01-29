@@ -13,7 +13,6 @@ from rich.progress import BarColumn, Progress, SpinnerColumn, TaskProgressColumn
 from code_guro.analyzer import AnalysisResult, FileInfo, chunk_files, get_critical_files
 from code_guro.config import get_api_key
 from code_guro.frameworks import get_framework_context
-from code_guro.providers.factory import get_provider
 from code_guro.prompts import (
     ARCHITECTURE_PROMPT,
     CHUNK_ANALYSIS_PROMPT,
@@ -28,6 +27,7 @@ from code_guro.prompts import (
     SYNTHESIS_OVERVIEW_PROMPT,
     SYSTEM_PROMPT,
 )
+from code_guro.providers.factory import get_provider
 
 console = Console()
 

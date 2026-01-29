@@ -11,8 +11,8 @@ from rich.prompt import Prompt
 
 from code_guro import __version__
 from code_guro.config import (
-    get_provider_config,
     get_api_key,
+    get_provider_config,
     mask_api_key,
     require_provider,
     save_provider_config,
@@ -246,7 +246,9 @@ def convert(output_dir: str):
     if not output_path.exists():
         console.print(f"[red]Error:[/red] Directory not found: {output_dir}")
         console.print()
-        console.print("Run [bold cyan]code-guro analyze[/bold cyan] first to generate documentation.")
+        console.print(
+            "Run [bold cyan]code-guro analyze[/bold cyan] first to generate documentation."
+        )
         sys.exit(1)
 
     if not output_path.is_dir():
@@ -428,7 +430,9 @@ def configure():
             current_provider = get_provider(current_provider_name)
             current_key = current_provider.get_api_key()
             if current_key:
-                console.print(f"Current provider: [cyan]{current_provider.get_provider_name()}[/cyan]")
+                console.print(
+                    f"Current provider: [cyan]{current_provider.get_provider_name()}[/cyan]"
+                )
                 console.print(f"Current API key: [cyan]{mask_api_key(current_key)}[/cyan]")
                 console.print()
 
@@ -470,7 +474,7 @@ def configure():
     console.print()
     console.print(f"Please set your {selected_name} API key as an environment variable:")
     console.print()
-    console.print(f"  [cyan]export {selected_env_var}=\"your-key-here\"[/cyan]")
+    console.print(f'  [cyan]export {selected_env_var}="your-key-here"[/cyan]')
     console.print()
     console.print("You can add this to your ~/.zshrc or ~/.bashrc to make it permanent.")
     console.print()
@@ -525,7 +529,9 @@ def configure():
                 f"Make sure {selected_env_var} is set before running commands."
             )
         console.print()
-        console.print("You can now use [bold cyan]code-guro analyze[/bold cyan] to analyze a codebase.")
+        console.print(
+            "You can now use [bold cyan]code-guro analyze[/bold cyan] to analyze a codebase."
+        )
 
     except Exception as e:
         console.print(f"[red]Error:[/red] {str(e)}")
