@@ -14,7 +14,9 @@ This document provides essential context for AI agents and developers working wi
 
 | Package | Version | Purpose |
 |---------|---------|---------|
-| `anthropic` | >=0.18.0 | Claude API client for LLM interactions |
+| `anthropic` | >=0.18.0 | Anthropic Claude API client |
+| `openai` | >=1.0.0 | OpenAI GPT-4o API client |
+| `google-generativeai` | >=0.3.0 | Google Gemini API client |
 | `click` | >=8.0 | CLI framework for command structure |
 | `rich` | >=13.0 | Terminal formatting, progress bars, panels |
 | `gitpython` | >=3.1 | Git repository cloning and manipulation |
@@ -36,9 +38,13 @@ This document provides essential context for AI agents and developers working wi
 - `pygments>=2.15` - Syntax highlighting
 
 ### Environment Requirements
-- Internet connection required (connects to `api.anthropic.com:443`)
-- Anthropic API key (set via `CLAUDE_API_KEY`, `ANTHROPIC_API_KEY`, or `code-guro configure`)
-- Token encoding: `cl100k_base` (compatible with GPT-4/Claude)
+- Internet connection required (connects to provider APIs)
+- LLM provider API key (set via environment variables):
+  - **Anthropic**: `ANTHROPIC_API_KEY` or `CLAUDE_API_KEY` (backwards compatibility)
+  - **OpenAI**: `OPENAI_API_KEY`
+  - **Google**: `GOOGLE_API_KEY` or `GEMINI_API_KEY` (backwards compatibility)
+- Provider selection via `code-guro configure` (stored in `~/.config/code-guro/config.json`)
+- Token encoding: `cl100k_base` (for Anthropic/OpenAI), provider-specific for Google Gemini
 
 ---
 
@@ -50,10 +56,16 @@ code-guro/
 │   ├── __init__.py          # Package version (0.4.2)
 │   ├── cli.py               # CLI entry point - Click commands
 │   ├── analyzer.py          # Codebase analysis engine
-│   ├── generator.py         # Documentation generation via Claude
+│   ├── generator.py         # Documentation generation via LLM
 │   ├── frameworks.py        # Framework detection (Next.js, React, Django, etc.)
-│   ├── prompts.py           # Claude API prompt templates
-│   ├── config.py            # API key management and storage
+│   ├── prompts.py           # LLM prompt templates
+│   ├── config.py            # Provider selection and configuration
+│   ├── providers/            # LLM provider abstraction layer
+│   │   ├── __init__.py      # LLMProvider base class
+│   │   ├── factory.py       # Provider factory
+│   │   ├── anthropic_provider.py  # Anthropic Claude implementation
+│   │   ├── openai_provider.py     # OpenAI GPT-4o implementation
+│   │   └── gemini_provider.py     # Google Gemini implementation
 │   ├── utils.py             # Token counting, file handling utilities
 │   ├── errors.py            # Custom exception hierarchy
 │   ├── repl.py              # Interactive conversation mode
@@ -86,11 +98,27 @@ code-guro/
 ### Data Flow
 ```
 CLI Input → Analyzer (file traversal, framework detection)
-         → Generator (Claude API prompts)
+         → Generator (LLM API calls via provider abstraction)
          → Markdown files (code-guro-output/markdown/)
          → HTML Converter (optional, default enabled)
          → HTML files (code-guro-output/html/)
 ```
+
+### Provider Architecture
+```
+CLI/Generator → Provider Factory → Selected Provider (Anthropic/OpenAI/Gemini)
+                                      ↓
+                              Provider-specific SDK
+                                      ↓
+                              LLM API Response
+```
+
+The provider abstraction layer (`providers/`) allows Code Guro to support multiple LLM providers:
+- **AnthropicProvider**: Wraps Anthropic Claude API
+- **OpenAIProvider**: Wraps OpenAI GPT-4o API
+- **GeminiProvider**: Wraps Google Gemini API
+
+All providers implement the `LLMProvider` interface with methods: `call()`, `validate_api_key()`, `estimate_cost()`, `count_tokens()`.
 
 ---
 
@@ -160,8 +188,9 @@ pytest                  # Run tests
 ### CLI Commands
 
 ```bash
-# Configure API key (stored in ~/.config/code-guro/config.json)
+# Configure provider and API key
 code-guro configure
+# Selects provider and validates API key from environment variable
 
 # Analyze a local codebase (generates both HTML and markdown by default)
 code-guro analyze .
@@ -335,10 +364,12 @@ Images, audio, archives, executables, and documents are automatically skipped.
 - Print statements (use `rich.console.Console` instead)
 
 ### API Cost Awareness
-- Input tokens: $3.00 per million
-- Output tokens: $15.00 per million
+Cost estimation is provider-specific:
+- **Anthropic Claude Sonnet 4**: $3.00 / $15.00 per million tokens (input/output)
+- **OpenAI GPT-4o**: $2.50 / $10.00 per million tokens (input/output)
+- **Google Gemini 2.0 Flash**: $0.075 / $0.30 per million tokens (input/output)
 - Cost confirmation threshold: $1.00 (prompts user)
-- Always estimate costs before processing
+- Always estimate costs before processing using the selected provider's pricing
 
 ---
 
@@ -527,10 +558,19 @@ INPUT_COST_PER_TOKEN = 0.000003  # $3/million
 OUTPUT_COST_PER_TOKEN = 0.000015 # $15/million
 ```
 
-### Claude Model Used
+### Default Models Per Provider
 ```python
+# Anthropic
 MODEL = "claude-sonnet-4-20250514"
+
+# OpenAI
+MODEL = "gpt-4o-2024-11-20"
+
+# Google Gemini
+MODEL = "gemini-2.0-flash-exp"
 ```
+
+Models are hardcoded per provider for optimal capability/cost balance. Users select provider during `code-guro configure`, and the appropriate model is used automatically.
 
 ---
 

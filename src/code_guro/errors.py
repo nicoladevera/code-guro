@@ -55,8 +55,7 @@ class GitHubError(CodeGuroError):
 ERROR_MESSAGES = {
     "no_api_key": (
         "No API key configured.",
-        "Run 'code-guro configure' to set up your Claude API key.\n"
-        "Get your API key at: https://console.anthropic.com",
+        "Run 'code-guro configure' to set up your LLM provider.",
     ),
     "invalid_api_key": (
         "Invalid API key.",
@@ -126,35 +125,93 @@ def get_error(error_type: str, **kwargs) -> CodeGuroError:
     return CodeGuroError(message.format(**kwargs), hint.format(**kwargs))
 
 
-def check_internet_connection() -> bool:
-    """Check if there is an internet connection.
+def check_internet_connection(provider_name: str = None) -> bool:
+    """Check if there is an internet connection to the provider's API.
+
+    Args:
+        provider_name: Name of provider to check. If None, checks all providers.
 
     Returns:
         True if connected, False otherwise
     """
     import socket
 
-    try:
-        socket.create_connection(("api.anthropic.com", 443), timeout=5)
-        return True
-    except OSError:
-        return False
+    # Provider-specific API endpoints
+    endpoints = {
+        "anthropic": ("api.anthropic.com", 443),
+        "openai": ("api.openai.com", 443),
+        "google": ("generativelanguage.googleapis.com", 443),
+    }
+
+    if provider_name:
+        endpoints_to_check = [endpoints.get(provider_name.lower())]
+    else:
+        endpoints_to_check = list(endpoints.values())
+
+    endpoints_to_check = [e for e in endpoints_to_check if e is not None]
+
+    for host, port in endpoints_to_check:
+        try:
+            socket.create_connection((host, port), timeout=5)
+            return True
+        except OSError:
+            continue
+
+    return False
 
 
-def handle_api_error(error: Exception) -> None:
+def handle_api_error(error: Exception, provider_name: str = None) -> None:
     """Handle API errors and display appropriate messages.
 
     Args:
         error: The exception that occurred
+        provider_name: Name of provider that raised the error (optional)
     """
-    import anthropic
+    # Try to import all provider SDKs
+    try:
+        import anthropic
+    except ImportError:
+        anthropic = None
 
-    if isinstance(error, anthropic.AuthenticationError):
+    try:
+        import openai
+    except ImportError:
+        openai = None
+
+    error_text = str(error).lower()
+
+    # Check for missing API keys
+    if "api key not configured" in error_text or "api key not found" in error_text:
+        get_error("no_api_key").display()
+        return
+    # Check for authentication errors
+    if anthropic and isinstance(error, anthropic.AuthenticationError):
         get_error("invalid_api_key").display()
-    elif isinstance(error, anthropic.RateLimitError):
+    elif openai and isinstance(error, openai.AuthenticationError):
+        get_error("invalid_api_key").display()
+    # Check for rate limit errors
+    elif anthropic and isinstance(error, anthropic.RateLimitError):
         get_error("rate_limited").display()
-    elif isinstance(error, anthropic.APIConnectionError):
-        if not check_internet_connection():
+    elif openai and isinstance(error, openai.RateLimitError):
+        get_error("rate_limited").display()
+    # Check for connection errors
+    elif anthropic and isinstance(error, anthropic.APIConnectionError):
+        if not check_internet_connection(provider_name):
+            get_error("no_internet").display()
+        else:
+            get_error("api_timeout").display()
+    elif openai and isinstance(error, openai.APIConnectionError):
+        if not check_internet_connection(provider_name):
+            get_error("no_internet").display()
+        else:
+            get_error("api_timeout").display()
+    # Check for generic errors that might indicate API issues
+    elif "authentication" in error_text or "api_key" in error_text:
+        get_error("invalid_api_key").display()
+    elif "rate limit" in error_text or "quota" in error_text:
+        get_error("rate_limited").display()
+    elif "connection" in error_text or "network" in error_text:
+        if not check_internet_connection(provider_name):
             get_error("no_internet").display()
         else:
             get_error("api_timeout").display()

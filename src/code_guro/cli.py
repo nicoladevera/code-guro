@@ -11,12 +11,10 @@ from rich.prompt import Prompt
 
 from code_guro import __version__
 from code_guro.config import (
-    get_api_key,
-    is_api_key_configured,
+    get_provider_config,
     mask_api_key,
-    require_api_key,
-    save_api_key,
-    validate_api_key,
+    require_provider,
+    save_provider_config,
 )
 from code_guro.errors import check_internet_connection, handle_api_error
 
@@ -24,12 +22,12 @@ console = Console()
 
 
 def require_api_key_decorator(f: Callable) -> Callable:
-    """Decorator to require API key before running a command."""
+    """Decorator to require provider configuration before running a command."""
 
     @functools.wraps(f)
     def wrapper(*args, **kwargs):
-        api_key = require_api_key()
-        if not api_key:
+        provider_name = require_provider()
+        if not provider_name:
             sys.exit(1)
         return f(*args, **kwargs)
 
@@ -41,7 +39,8 @@ def require_internet_decorator(f: Callable) -> Callable:
 
     @functools.wraps(f)
     def wrapper(*args, **kwargs):
-        if not check_internet_connection():
+        provider_name = get_provider_config()
+        if not check_internet_connection(provider_name):
             console.print(
                 "\n[bold red]Error:[/bold red] No internet connection detected.\n"
                 "\n"
@@ -162,7 +161,14 @@ def analyze(path: str, markdown_only: bool):
         console.print()
 
     except Exception as e:
-        handle_api_error(e)
+        from code_guro.providers.factory import get_provider
+
+        try:
+            provider = get_provider()
+            provider_name = provider.get_provider_name().lower()
+        except Exception:
+            provider_name = None
+        handle_api_error(e, provider_name)
         sys.exit(1)
 
 
@@ -353,71 +359,144 @@ def explain(path: str, interactive: bool, output: str):
                 console.print(f"[green]Explanation saved to:[/green] {filepath}")
 
     except Exception as e:
-        handle_api_error(e)
+        from code_guro.providers.factory import get_provider
+
+        try:
+            provider = get_provider()
+            provider_name = provider.get_provider_name().lower()
+        except Exception:
+            provider_name = None
+        handle_api_error(e, provider_name)
         sys.exit(1)
 
 
 @main.command()
 def configure():
-    """Configure Code Guro with your Claude API key.
+    """Configure Code Guro with your LLM provider.
 
-    This command will prompt you to enter your Claude API key and save it
-    securely for future use.
-
-    Get your API key at: https://console.anthropic.com
+    This command will prompt you to select a provider and guide you through
+    setting up the API key as an environment variable.
     """
+    from code_guro.providers.factory import get_provider, list_providers
+
     console.print()
     console.print("[bold]Code Guro Configuration[/bold]")
     console.print()
 
     # Check if already configured
-    if is_api_key_configured():
-        current_key = get_api_key()
-        console.print(f"Current API key: [cyan]{mask_api_key(current_key)}[/cyan]")
-        console.print()
+    current_provider_name = get_provider_config()
+    if current_provider_name:
+        try:
+            current_provider = get_provider(current_provider_name)
+            current_key = current_provider.get_api_key()
+            if current_key:
+                console.print(f"Current provider: [cyan]{current_provider.get_provider_name()}[/cyan]")
+                console.print(f"Current API key: [cyan]{mask_api_key(current_key)}[/cyan]")
+                console.print()
 
-        if (
-            not Prompt.ask(
-                "Do you want to replace the existing API key?",
-                choices=["y", "n"],
-                default="n",
+                if (
+                    not Prompt.ask(
+                        "Do you want to change the provider?",
+                        choices=["y", "n"],
+                        default="n",
+                    )
+                    == "y"
+                ):
+                    console.print("[yellow]Configuration unchanged.[/yellow]")
+                    return
+        except Exception:
+            # Provider config exists but invalid, allow reconfiguration
+            pass
+
+    # Provider selection
+    providers = list_providers()
+
+    console.print("Select your LLM provider:")
+    console.print()
+    for i, provider_id in enumerate(providers, 1):
+        provider = get_provider(provider_id)
+        console.print(f"  {i}. {provider.get_provider_name()}")
+    console.print()
+
+    try:
+        choice = Prompt.ask("Choice", choices=[str(i) for i in range(1, len(providers) + 1)])
+        selected_provider_id = providers[int(choice) - 1]
+    except (ValueError, IndexError, KeyboardInterrupt):
+        console.print("[yellow]Configuration cancelled.[/yellow]")
+        sys.exit(0)
+
+    selected_provider = get_provider(selected_provider_id)
+    selected_name = selected_provider.get_provider_name()
+    selected_env_var = selected_provider.get_api_key_env_var()
+    selected_url = selected_provider.get_api_key_url()
+    console.print()
+    console.print(f"[bold]Setting up {selected_name}[/bold]")
+    console.print()
+    console.print(f"Please set your {selected_name} API key as an environment variable:")
+    console.print()
+    console.print(f"  [cyan]export {selected_env_var}=\"your-key-here\"[/cyan]")
+    console.print()
+    console.print("You can add this to your ~/.zshrc or ~/.bashrc to make it permanent.")
+    console.print()
+    console.print(f"Get your API key at: [link={selected_url}]{selected_url}[/link]")
+    console.print()
+
+    # Get provider instance and validate
+    try:
+        api_key = selected_provider.get_api_key()
+
+        if not api_key:
+            use_pasted_key = (
+                Prompt.ask(
+                    f"{selected_env_var} not found. Paste API key now to validate?",
+                    choices=["y", "n"],
+                    default="n",
+                )
+                == "y"
             )
-            == "y"
-        ):
-            console.print("[yellow]Configuration unchanged.[/yellow]")
-            return
+            if not use_pasted_key:
+                console.print()
+                console.print(
+                    f"[yellow]Configuration not saved.[/yellow]\n\n"
+                    f"Please set {selected_env_var} and run "
+                    f"[bold cyan]code-guro configure[/bold cyan] again."
+                )
+                sys.exit(0)
 
-    console.print(
-        "Enter your Claude API key (get one at [link=https://console.anthropic.com]console.anthropic.com[/link]):"
-    )
-    console.print()
+            api_key = Prompt.ask("API key", password=True)
+            if not api_key:
+                console.print("[red]Error:[/red] API key cannot be empty.")
+                sys.exit(1)
 
-    # Prompt for API key
-    api_key = Prompt.ask("API key", password=False)
-
-    if not api_key:
-        console.print("[red]Error: API key cannot be empty.[/red]")
-        sys.exit(1)
-
-    # Validate the key
-    console.print()
-    console.print("[dim]Validating API key...[/dim]")
-
-    is_valid, message = validate_api_key(api_key)
-
-    if not is_valid:
-        console.print(f"[red]Error: {message}[/red]")
+        # Validate the key
         console.print()
-        console.print("Please check your API key and try again.")
+        console.print("[dim]Validating API key...[/dim]")
+
+        is_valid, message = selected_provider.validate_api_key(api_key)
+
+        if not is_valid:
+            console.print(f"[red]Error: {message}[/red]")
+            console.print()
+            console.print("Please check your API key and try again.")
+            sys.exit(1)
+
+        # Save provider selection
+        save_provider_config(selected_provider_id)
+
+        console.print()
+        console.print("[green]✓ API key validated successfully![/green]")
+        console.print(f"[green]✓ Provider saved: {selected_name}[/green]")
+        if not selected_provider.get_api_key():
+            console.print(
+                f"[yellow]Note:[/yellow] API keys are not stored by Code Guro.\n"
+                f"Make sure {selected_env_var} is set before running commands."
+            )
+        console.print()
+        console.print("You can now use [bold cyan]code-guro analyze[/bold cyan] to analyze a codebase.")
+
+    except Exception as e:
+        console.print(f"[red]Error:[/red] {str(e)}")
         sys.exit(1)
-
-    # Save the key
-    save_api_key(api_key)
-
-    console.print()
-    console.print("[green]✓ API key saved successfully![/green]")
-    console.print()
-    console.print("You can now use [bold cyan]code-guro analyze[/bold cyan] to analyze a codebase.")
 
 
 if __name__ == "__main__":
