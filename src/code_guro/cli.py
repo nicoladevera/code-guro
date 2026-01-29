@@ -436,11 +436,12 @@ def configure():
                 console.print(f"Current API key: [cyan]{mask_api_key(current_key)}[/cyan]")
                 console.print()
 
-                if not Prompt.ask(
+                change_provider = Prompt.ask(
                     "Do you want to change the provider?",
                     choices=["y", "n"],
                     default="n",
-                ) == "y":
+                )
+                if change_provider != "y":
                     console.print("[yellow]Configuration unchanged.[/yellow]")
                     return
         except Exception:
@@ -485,15 +486,12 @@ def configure():
         api_key = selected_provider.get_api_key()
 
         if not api_key:
-            use_pasted_key = (
-                Prompt.ask(
-                    f"{selected_env_var} not found. Paste API key now to validate?",
-                    choices=["y", "n"],
-                    default="n",
-                )
-                == "y"
+            use_pasted_key = Prompt.ask(
+                f"{selected_env_var} not found. Paste API key now to validate?",
+                choices=["y", "n"],
+                default="n",
             )
-            if not use_pasted_key:
+            if use_pasted_key != "y":
                 console.print()
                 console.print(
                     f"[yellow]Configuration not saved.[/yellow]\n\n"
