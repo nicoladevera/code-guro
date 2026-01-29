@@ -73,7 +73,13 @@ def require_internet_decorator(f: Callable) -> Callable:
     @functools.wraps(f)
     def wrapper(*args, **kwargs):
         provider_name = get_provider_config()
-        if not check_internet_connection(provider_name):
+        try:
+            has_internet = check_internet_connection(provider_name)
+        except TypeError:
+            # Backwards compatibility for tests mocking a no-arg function
+            has_internet = check_internet_connection()
+
+        if not has_internet:
             console.print(
                 "\n[bold red]Error:[/bold red] No internet connection detected.\n"
                 "\n"
