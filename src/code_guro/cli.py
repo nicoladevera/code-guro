@@ -436,14 +436,11 @@ def configure():
                 console.print(f"Current API key: [cyan]{mask_api_key(current_key)}[/cyan]")
                 console.print()
 
-                if (
-                    not Prompt.ask(
-                        "Do you want to change the provider?",
-                        choices=["y", "n"],
-                        default="n",
-                    )
-                    == "y"
-                ):
+                if not Prompt.ask(
+                    "Do you want to change the provider?",
+                    choices=["y", "n"],
+                    default="n",
+                ) == "y":
                     console.print("[yellow]Configuration unchanged.[/yellow]")
                     return
         except Exception:

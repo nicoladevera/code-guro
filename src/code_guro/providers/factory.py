@@ -14,10 +14,7 @@ def _get_provider_registry():
     from code_guro.providers.anthropic_provider import AnthropicProvider
     from code_guro.providers.openai_provider import OpenAIProvider
 
-    registry = {
-        "anthropic": AnthropicProvider,
-        "openai": OpenAIProvider,
-    }
+    registry = {"anthropic": AnthropicProvider, "openai": OpenAIProvider}
 
     if _google_sdk_available():
         from code_guro.providers.gemini_provider import GeminiProvider
@@ -45,9 +42,7 @@ def get_provider(provider_name: Optional[str] = None):
         provider_name = get_provider_config()
 
     if not provider_name:
-        raise ValueError(
-            "No provider configured. Run 'code-guro configure' to set up a provider."
-        )
+        raise ValueError("No provider configured. Run 'code-guro configure' to set up a provider.")
 
     provider_name = provider_name.lower()
     providers = _get_provider_registry()
@@ -59,9 +54,7 @@ def get_provider(provider_name: Optional[str] = None):
                 "Install it with Python 3.9+ to enable Gemini support."
             )
         valid_providers = ", ".join(providers.keys())
-        raise ValueError(
-            f"Invalid provider '{provider_name}'. Valid providers: {valid_providers}"
-        )
+        raise ValueError(f"Invalid provider '{provider_name}'. Valid providers: {valid_providers}")
 
     provider_class = providers[provider_name]
     return provider_class()

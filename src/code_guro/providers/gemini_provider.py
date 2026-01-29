@@ -7,6 +7,7 @@ try:
     import google.generativeai as genai
 except ImportError:  # pragma: no cover - handled at runtime for optional dependency
     genai = None
+
 import tiktoken
 
 from code_guro.providers import LLMProvider
@@ -97,15 +98,12 @@ class GeminiProvider(LLMProvider):
         # Gemini uses generation_config for max_tokens
         generation_config = genai.types.GenerationConfig(max_output_tokens=max_tokens)
 
-        response = model.generate_content(
-            prompt,
-            generation_config=generation_config,
-        )
+        response = model.generate_content(prompt, generation_config=generation_config)
 
         # Handle response - Gemini returns text directly
-        if hasattr(response, 'text'):
+        if hasattr(response, "text"):
             return response.text
-        elif hasattr(response, 'candidates') and response.candidates:
+        elif hasattr(response, "candidates") and response.candidates:
             # Fallback for different response formats
             return response.candidates[0].content.parts[0].text
         else:
@@ -146,11 +144,7 @@ class GeminiProvider(LLMProvider):
             return True, "API key is valid"
         except Exception as e:
             error_str = str(e).lower()
-            if (
-                "api_key" in error_str
-                or "authentication" in error_str
-                or "invalid" in error_str
-            ):
+            if "api_key" in error_str or "authentication" in error_str or "invalid" in error_str:
                 return False, "Invalid API key. Please check your key and try again."
             elif "quota" in error_str or "rate" in error_str:
                 # Key is valid but rate limited - still counts as valid

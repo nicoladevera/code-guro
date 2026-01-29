@@ -23,9 +23,7 @@ console = Console()
 MAX_HISTORY_PAIRS = 10
 
 
-def create_system_prompt(
-    path: Path, content: str, frameworks: List[FrameworkInfo]
-) -> str:
+def create_system_prompt(path: Path, content: str, frameworks: List[FrameworkInfo]) -> str:
     """Create a system prompt for interactive mode.
 
     Args:
@@ -47,10 +45,7 @@ def create_system_prompt(
     )
 
 
-def format_session_log(
-    path: Path,
-    history: List[Tuple[str, str]],
-) -> str:
+def format_session_log(path: Path, history: List[Tuple[str, str]]) -> str:
     """Format conversation history as markdown.
 
     Args:
@@ -153,9 +148,7 @@ def start_repl(
                 # Keep only the last N pairs
                 conversation_history = conversation_history[-MAX_HISTORY_PAIRS:]
                 # Rebuild context from remaining history
-                conversation_context = "\n".join(
-                    f"Q: {q}\nA: {a}" for q, a in conversation_history
-                )
+                conversation_context = "\n".join(f"Q: {q}\nA: {a}" for q, a in conversation_history)
 
             # Call API
             console.print()
@@ -172,9 +165,7 @@ def start_repl(
                 conversation_history.append((question, answer))
                 # Update context (keep last few exchanges)
                 recent_history = conversation_history[-3:]  # Last 3 Q&A pairs
-                conversation_context = "\n".join(
-                    f"Q: {q}\nA: {a}" for q, a in recent_history
-                )
+                conversation_context = "\n".join(f"Q: {q}\nA: {a}" for q, a in recent_history)
 
                 # Display response with markdown formatting
                 console.print()
@@ -207,9 +198,7 @@ def start_repl(
             # Find project root for output
             parent = path.parent if path.is_file() else path
             while parent != parent.parent:
-                if (parent / "package.json").exists() or (
-                    parent / "pyproject.toml"
-                ).exists():
+                if (parent / "package.json").exists() or (parent / "pyproject.toml").exists():
                     break
                 parent = parent.parent
 
