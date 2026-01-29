@@ -189,7 +189,7 @@ def is_provider_configured() -> bool:
 
 # Backwards compatibility functions (deprecated)
 def get_api_key() -> Optional[str]:
-    """DEPRECATED: Get API key from environment.
+    """DEPRECATED: Get API key from environment or legacy config.
 
     This function is kept for backwards compatibility but should not be used.
     Use get_provider() from providers.factory instead.
@@ -197,18 +197,26 @@ def get_api_key() -> Optional[str]:
     Returns:
         API key string or None if not configured
     """
-    # Try to get provider and return its API key
-    try:
-        from code_guro.providers.factory import get_provider
-        provider = get_provider()
-        return provider.get_api_key()
-    except (ValueError, Exception):
-        # Fall back to old behavior for backwards compatibility
-        for env_var in ["CLAUDE_API_KEY", "ANTHROPIC_API_KEY"]:
-            key = os.environ.get(env_var)
-            if key:
-                return key
-        return None
+    # Check environment variables first (legacy Anthropic behavior)
+    for env_var in ["CLAUDE_API_KEY", "ANTHROPIC_API_KEY"]:
+        key = os.environ.get(env_var)
+        if key:
+            return key
+
+    # Fall back to legacy config file key if present
+    config = read_config()
+    return config.get("api_key")
+
+
+def save_api_key(api_key: str) -> None:
+    """DEPRECATED: Save API key to config file.
+
+    This function is kept for backwards compatibility but should not be used.
+    API keys are now stored in environment variables.
+    """
+    config = read_config()
+    config["api_key"] = api_key
+    write_config(config)
 
 
 def is_api_key_configured() -> bool:
@@ -220,4 +228,4 @@ def is_api_key_configured() -> bool:
     Returns:
         True if API key is available
     """
-    return is_provider_configured()
+    return get_api_key() is not None

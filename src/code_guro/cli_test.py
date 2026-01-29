@@ -413,13 +413,33 @@ class TestConfigureCommand:
         """Should save API key when valid key is provided."""
         runner = CliRunner()
 
-        # Mock the validation and save functions (validate_api_key returns tuple)
-        monkeypatch.setattr("code_guro.cli.validate_api_key", lambda key: (True, "Valid"))
-        monkeypatch.setattr("code_guro.cli.save_api_key", lambda key: None)
-        monkeypatch.setattr("code_guro.cli.is_api_key_configured", lambda: False)
+        class DummyProvider:
+            def __init__(self, is_valid=True):
+                self._is_valid = is_valid
 
-        # Simulate user input
-        result = runner.invoke(main, ["configure"], input="sk-test-key\n")
+            def get_provider_name(self):
+                return "Anthropic"
+
+            def get_api_key_env_var(self):
+                return "ANTHROPIC_API_KEY"
+
+            def get_api_key_url(self):
+                return "https://console.anthropic.com"
+
+            def get_api_key(self):
+                return None
+
+            def validate_api_key(self, api_key=None):
+                return (self._is_valid, "Valid" if self._is_valid else "Invalid API key")
+
+        # Mock provider selection and config save
+        monkeypatch.setattr("code_guro.providers.factory.list_providers", lambda: ["anthropic"])
+        monkeypatch.setattr("code_guro.providers.factory.get_provider", lambda *_: DummyProvider(True))
+        monkeypatch.setattr("code_guro.cli.save_provider_config", lambda _: None)
+        monkeypatch.setattr("code_guro.cli.get_provider_config", lambda: None)
+
+        # Simulate user input: choose provider, paste key, key value
+        result = runner.invoke(main, ["configure"], input="1\ny\nsk-test-key\n")
 
         # Should succeed
         assert result.exit_code == 0
@@ -429,13 +449,30 @@ class TestConfigureCommand:
         """Should reject invalid API key."""
         runner = CliRunner()
 
-        # Mock validation to fail (returns tuple)
-        monkeypatch.setattr(
-            "code_guro.cli.validate_api_key", lambda key: (False, "Invalid API key")
-        )
-        monkeypatch.setattr("code_guro.cli.is_api_key_configured", lambda: False)
+        class DummyProvider:
+            def __init__(self, is_valid=False):
+                self._is_valid = is_valid
 
-        result = runner.invoke(main, ["configure"], input="invalid-key\n")
+            def get_provider_name(self):
+                return "Anthropic"
+
+            def get_api_key_env_var(self):
+                return "ANTHROPIC_API_KEY"
+
+            def get_api_key_url(self):
+                return "https://console.anthropic.com"
+
+            def get_api_key(self):
+                return None
+
+            def validate_api_key(self, api_key=None):
+                return (self._is_valid, "Invalid API key")
+
+        monkeypatch.setattr("code_guro.providers.factory.list_providers", lambda: ["anthropic"])
+        monkeypatch.setattr("code_guro.providers.factory.get_provider", lambda *_: DummyProvider(False))
+        monkeypatch.setattr("code_guro.cli.get_provider_config", lambda: None)
+
+        result = runner.invoke(main, ["configure"], input="1\ny\ninvalid-key\n")
 
         # Should fail with error
         assert result.exit_code == 1

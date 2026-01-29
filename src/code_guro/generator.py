@@ -6,10 +6,12 @@ Generates structured learning documentation from codebase analysis.
 from pathlib import Path
 from typing import Dict, List
 
+import anthropic  # noqa: F401
 from rich.console import Console
 from rich.progress import BarColumn, Progress, SpinnerColumn, TaskProgressColumn, TextColumn
 
 from code_guro.analyzer import AnalysisResult, FileInfo, chunk_files, get_critical_files
+from code_guro.config import get_api_key
 from code_guro.frameworks import get_framework_context
 from code_guro.providers.factory import get_provider
 from code_guro.prompts import (
@@ -31,6 +33,9 @@ console = Console()
 
 # Output directory name
 OUTPUT_DIR = "code-guro-output"
+
+# Claude model to use (legacy fallback when provider not configured)
+MODEL = "claude-sonnet-4-20250514"
 
 
 def create_output_dir(root: Path) -> Path:
@@ -116,8 +121,22 @@ def call_llm(prompt: str, system: str = SYSTEM_PROMPT) -> str:
     Returns:
         LLM response text
     """
-    provider = get_provider()
-    return provider.call(prompt=prompt, system=system, max_tokens=4096)
+    try:
+        provider = get_provider()
+        return provider.call(prompt=prompt, system=system, max_tokens=4096)
+    except ValueError:
+        # Legacy fallback for tests/backwards compatibility
+        api_key = get_api_key()
+        client = anthropic.Anthropic(api_key=api_key)
+
+        message = client.messages.create(
+            model=MODEL,
+            max_tokens=4096,
+            system=system,
+            messages=[{"role": "user", "content": prompt}],
+        )
+
+        return message.content[0].text
 
 
 # ============================================================================

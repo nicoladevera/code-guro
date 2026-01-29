@@ -3,7 +3,7 @@
 import functools
 import sys
 from pathlib import Path
-from typing import Callable
+from typing import Callable, Optional
 
 import click
 from rich.console import Console
@@ -12,6 +12,7 @@ from rich.prompt import Prompt
 from code_guro import __version__
 from code_guro.config import (
     get_provider_config,
+    get_api_key,
     mask_api_key,
     require_provider,
     save_provider_config,
@@ -26,12 +27,44 @@ def require_api_key_decorator(f: Callable) -> Callable:
 
     @functools.wraps(f)
     def wrapper(*args, **kwargs):
-        provider_name = require_provider()
-        if not provider_name:
+        api_key = require_api_key()
+        if not api_key:
             sys.exit(1)
         return f(*args, **kwargs)
 
     return wrapper
+
+
+def require_api_key() -> Optional[str]:
+    """Backward-compatible API key check for CLI decorators."""
+    provider_name = require_provider()
+    if not provider_name:
+        return None
+    from code_guro.providers.factory import get_provider
+
+    try:
+        provider = get_provider(provider_name)
+        return provider.get_api_key()
+    except ValueError:
+        return get_api_key()
+
+
+def validate_api_key(api_key: str):
+    """Backward-compatible API key validation shim."""
+    from code_guro.providers.factory import get_provider
+
+    try:
+        provider = get_provider()
+    except ValueError:
+        provider = get_provider("anthropic")
+    return provider.validate_api_key(api_key)
+
+
+def save_api_key(api_key: str) -> None:
+    """Backward-compatible API key saver."""
+    from code_guro.config import save_api_key as _save_api_key
+
+    _save_api_key(api_key)
 
 
 def require_internet_decorator(f: Callable) -> Callable:
