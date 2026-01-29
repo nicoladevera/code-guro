@@ -59,7 +59,9 @@ class OpenAIProvider(LLMProvider):
         """
         api_key = self.get_api_key()
         if not api_key:
-            raise ValueError("OpenAI API key not configured. Set OPENAI_API_KEY environment variable.")
+            raise ValueError(
+                "OpenAI API key not configured. Set OPENAI_API_KEY environment variable."
+            )
 
         client = openai.OpenAI(api_key=api_key)
 
@@ -96,7 +98,8 @@ class OpenAIProvider(LLMProvider):
             client = openai.OpenAI(api_key=api_key)
             # Make a minimal request to validate the key
             client.chat.completions.create(
-                model="gpt-4o-mini",  # Use a widely available, low-cost model for validation
+                # Use a widely available, low-cost model for validation
+                model="gpt-4o-mini",
                 max_tokens=10,
                 messages=[{"role": "user", "content": "Hi"}],
             )

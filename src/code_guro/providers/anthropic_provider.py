@@ -71,7 +71,9 @@ class AnthropicProvider(LLMProvider):
         """
         api_key = self.get_api_key()
         if not api_key:
-            raise ValueError("Anthropic API key not configured. Set ANTHROPIC_API_KEY environment variable.")
+            raise ValueError(
+                "Anthropic API key not configured. Set ANTHROPIC_API_KEY environment variable."
+            )
 
         client = anthropic.Anthropic(api_key=api_key)
 
@@ -103,7 +105,8 @@ class AnthropicProvider(LLMProvider):
             client = anthropic.Anthropic(api_key=api_key)
             # Make a minimal request to validate the key
             client.messages.create(
-                model="claude-3-haiku-20240307",  # Use cheaper model for validation
+                # Use cheaper model for validation
+                model="claude-3-haiku-20240307",
                 max_tokens=10,
                 messages=[{"role": "user", "content": "Hi"}],
             )

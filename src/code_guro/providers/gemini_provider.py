@@ -7,6 +7,7 @@ try:
     import google.generativeai as genai
 except ImportError:  # pragma: no cover - handled at runtime for optional dependency
     genai = None
+
 import tiktoken
 
 from code_guro.providers import LLMProvider
@@ -34,7 +35,9 @@ class GeminiProvider(LLMProvider):
         if not self._client_initialized:
             api_key = self.get_api_key()
             if not api_key:
-                raise ValueError("Google API key not configured. Set GOOGLE_API_KEY environment variable.")
+                raise ValueError(
+                    "Google API key not configured. Set GOOGLE_API_KEY environment variable."
+                )
             genai.configure(api_key=api_key)
             self._client_initialized = True
 
@@ -95,15 +98,12 @@ class GeminiProvider(LLMProvider):
         # Gemini uses generation_config for max_tokens
         generation_config = genai.types.GenerationConfig(max_output_tokens=max_tokens)
 
-        response = model.generate_content(
-            prompt,
-            generation_config=generation_config,
-        )
+        response = model.generate_content(prompt, generation_config=generation_config)
 
         # Handle response - Gemini returns text directly
-        if hasattr(response, 'text'):
+        if hasattr(response, "text"):
             return response.text
-        elif hasattr(response, 'candidates') and response.candidates:
+        elif hasattr(response, "candidates") and response.candidates:
             # Fallback for different response formats
             return response.candidates[0].content.parts[0].text
         else:
@@ -136,7 +136,8 @@ class GeminiProvider(LLMProvider):
             model = genai.GenerativeModel(model_name="gemini-2.0-flash-exp")
             # Make a minimal request to validate the key
             model.generate_content(
-                "Hi", generation_config=genai.types.GenerationConfig(max_output_tokens=10)
+                "Hi",
+                generation_config=genai.types.GenerationConfig(max_output_tokens=10),
             )
             # Reset client initialization state
             self._client_initialized = False

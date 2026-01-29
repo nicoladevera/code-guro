@@ -11,8 +11,8 @@ from rich.prompt import Prompt
 
 from code_guro import __version__
 from code_guro.config import (
-    get_provider_config,
     get_api_key,
+    get_provider_config,
     mask_api_key,
     require_provider,
     save_provider_config,
@@ -194,7 +194,8 @@ def analyze(path: str, markdown_only: bool):
             console.print(f"    [cyan]html/[/cyan] ({len(html_files)} files)")
             console.print()
             console.print(
-                f"[dim]Open {html_dir}/00-overview.html in your browser for the best experience![/dim]"
+                f"[dim]Open {html_dir}/00-overview.html in your browser for the best "
+                "experience![/dim]"
             )
 
         console.print()
@@ -429,18 +430,18 @@ def configure():
             current_provider = get_provider(current_provider_name)
             current_key = current_provider.get_api_key()
             if current_key:
-                console.print(f"Current provider: [cyan]{current_provider.get_provider_name()}[/cyan]")
+                console.print(
+                    f"Current provider: [cyan]{current_provider.get_provider_name()}[/cyan]"
+                )
                 console.print(f"Current API key: [cyan]{mask_api_key(current_key)}[/cyan]")
                 console.print()
 
-                if (
-                    not Prompt.ask(
-                        "Do you want to change the provider?",
-                        choices=["y", "n"],
-                        default="n",
-                    )
-                    == "y"
-                ):
+                change_provider = Prompt.ask(
+                    "Do you want to change the provider?",
+                    choices=["y", "n"],
+                    default="n",
+                )
+                if change_provider != "y":
                     console.print("[yellow]Configuration unchanged.[/yellow]")
                     return
         except Exception:
@@ -473,7 +474,7 @@ def configure():
     console.print()
     console.print(f"Please set your {selected_name} API key as an environment variable:")
     console.print()
-    console.print(f"  [cyan]export {selected_env_var}=\"your-key-here\"[/cyan]")
+    console.print(f'  [cyan]export {selected_env_var}="your-key-here"[/cyan]')
     console.print()
     console.print("You can add this to your ~/.zshrc or ~/.bashrc to make it permanent.")
     console.print()
@@ -485,15 +486,12 @@ def configure():
         api_key = selected_provider.get_api_key()
 
         if not api_key:
-            use_pasted_key = (
-                Prompt.ask(
-                    f"{selected_env_var} not found. Paste API key now to validate?",
-                    choices=["y", "n"],
-                    default="n",
-                )
-                == "y"
+            use_pasted_key = Prompt.ask(
+                f"{selected_env_var} not found. Paste API key now to validate?",
+                choices=["y", "n"],
+                default="n",
             )
-            if not use_pasted_key:
+            if use_pasted_key != "y":
                 console.print()
                 console.print(
                     f"[yellow]Configuration not saved.[/yellow]\n\n"
@@ -531,7 +529,9 @@ def configure():
                 f"Make sure {selected_env_var} is set before running commands."
             )
         console.print()
-        console.print("You can now use [bold cyan]code-guro analyze[/bold cyan] to analyze a codebase.")
+        console.print(
+            "You can now use [bold cyan]code-guro analyze[/bold cyan] to analyze a codebase."
+        )
 
     except Exception as e:
         console.print(f"[red]Error:[/red] {str(e)}")
