@@ -3,7 +3,10 @@
 import os
 from typing import Optional, Tuple
 
-import google.generativeai as genai
+try:
+    import google.generativeai as genai
+except ImportError:  # pragma: no cover - handled at runtime for optional dependency
+    genai = None
 import tiktoken
 
 from code_guro.providers import LLMProvider
@@ -23,6 +26,11 @@ class GeminiProvider(LLMProvider):
 
     def _ensure_client_initialized(self):
         """Ensure the Gemini client is initialized with API key."""
+        if genai is None:
+            raise ImportError(
+                "google-generativeai is not installed. "
+                "Install it with Python 3.9+ to use the Google provider."
+            )
         if not self._client_initialized:
             api_key = self.get_api_key()
             if not api_key:
@@ -115,6 +123,12 @@ class GeminiProvider(LLMProvider):
 
         if not api_key:
             return False, "No API key found. Set GOOGLE_API_KEY environment variable."
+
+        if genai is None:
+            return (
+                False,
+                "google-generativeai is not installed. Install it with Python 3.9+ to use Gemini.",
+            )
 
         try:
             # Temporarily configure with the provided key

@@ -1,19 +1,30 @@
 """Provider factory for creating LLM provider instances."""
 
+import importlib.util
 from typing import Optional
+
+
+def _google_sdk_available() -> bool:
+    """Check if the Google Generative AI SDK is available."""
+    return importlib.util.find_spec("google.generativeai") is not None
 
 
 def _get_provider_registry():
     """Lazy import providers to avoid circular dependencies."""
     from code_guro.providers.anthropic_provider import AnthropicProvider
-    from code_guro.providers.gemini_provider import GeminiProvider
     from code_guro.providers.openai_provider import OpenAIProvider
 
-    return {
+    registry = {
         "anthropic": AnthropicProvider,
         "openai": OpenAIProvider,
-        "google": GeminiProvider,
     }
+
+    if _google_sdk_available():
+        from code_guro.providers.gemini_provider import GeminiProvider
+
+        registry["google"] = GeminiProvider
+
+    return registry
 
 
 def get_provider(provider_name: Optional[str] = None):
@@ -42,6 +53,11 @@ def get_provider(provider_name: Optional[str] = None):
     providers = _get_provider_registry()
 
     if provider_name not in providers:
+        if provider_name == "google" and not _google_sdk_available():
+            raise ValueError(
+                "Google provider requires google-generativeai. "
+                "Install it with Python 3.9+ to enable Gemini support."
+            )
         valid_providers = ", ".join(providers.keys())
         raise ValueError(
             f"Invalid provider '{provider_name}'. Valid providers: {valid_providers}"
