@@ -6,13 +6,14 @@ Generates structured learning documentation from codebase analysis.
 from pathlib import Path
 from typing import Dict, List
 
-import anthropic
+import anthropic  # noqa: F401
 from rich.console import Console
 from rich.progress import BarColumn, Progress, SpinnerColumn, TaskProgressColumn, TextColumn
 
 from code_guro.analyzer import AnalysisResult, FileInfo, chunk_files, get_critical_files
 from code_guro.config import get_api_key
 from code_guro.frameworks import get_framework_context
+from code_guro.providers.factory import get_provider
 from code_guro.prompts import (
     ARCHITECTURE_PROMPT,
     CHUNK_ANALYSIS_PROMPT,
@@ -33,7 +34,7 @@ console = Console()
 # Output directory name
 OUTPUT_DIR = "code-guro-output"
 
-# Claude model to use
+# Claude model to use (legacy fallback when provider not configured)
 MODEL = "claude-sonnet-4-20250514"
 
 
@@ -110,27 +111,32 @@ def format_file_content(files: List[FileInfo], max_tokens: int = 50000) -> str:
     return "\n".join(result)
 
 
-def call_claude(prompt: str, system: str = SYSTEM_PROMPT) -> str:
-    """Make a call to the Claude API.
+def call_llm(prompt: str, system: str = SYSTEM_PROMPT) -> str:
+    """Make a call to the LLM API using the configured provider.
 
     Args:
         prompt: The user prompt
         system: The system prompt
 
     Returns:
-        Claude's response text
+        LLM response text
     """
-    api_key = get_api_key()
-    client = anthropic.Anthropic(api_key=api_key)
+    try:
+        provider = get_provider()
+        return provider.call(prompt=prompt, system=system, max_tokens=4096)
+    except ValueError:
+        # Legacy fallback for tests/backwards compatibility
+        api_key = get_api_key()
+        client = anthropic.Anthropic(api_key=api_key)
 
-    message = client.messages.create(
-        model=MODEL,
-        max_tokens=4096,
-        system=system,
-        messages=[{"role": "user", "content": prompt}],
-    )
+        message = client.messages.create(
+            model=MODEL,
+            max_tokens=4096,
+            system=system,
+            messages=[{"role": "user", "content": prompt}],
+        )
 
-    return message.content[0].text
+        return message.content[0].text
 
 
 # ============================================================================
@@ -173,7 +179,7 @@ def analyze_chunk(
         chunk_files=format_file_content(chunk, max_tokens=100000),
     )
 
-    return call_claude(prompt)
+    return call_llm(prompt)
 
 
 def synthesize_overview(
@@ -204,7 +210,7 @@ def synthesize_overview(
         chunk_analyses=analyses_text,
     )
 
-    return call_claude(prompt)
+    return call_llm(prompt)
 
 
 def synthesize_architecture(
@@ -232,7 +238,7 @@ def synthesize_architecture(
         chunk_analyses=analyses_text,
     )
 
-    return call_claude(prompt)
+    return call_llm(prompt)
 
 
 def synthesize_core_files(
@@ -269,7 +275,7 @@ def synthesize_core_files(
         critical_files_summary=critical_summary,
     )
 
-    return call_claude(prompt)
+    return call_llm(prompt)
 
 
 def generate_chunked_documentation(
@@ -428,7 +434,7 @@ def generate_overview(result: AnalysisResult) -> str:
         key_files=format_file_content(critical_files, max_tokens=30000),
     )
 
-    return call_claude(prompt)
+    return call_llm(prompt)
 
 
 def generate_orientation(result: AnalysisResult) -> str:
@@ -457,7 +463,7 @@ def generate_orientation(result: AnalysisResult) -> str:
         sample_files=format_file_content(sample_files, max_tokens=20000),
     )
 
-    return call_claude(prompt)
+    return call_llm(prompt)
 
 
 def generate_architecture(result: AnalysisResult) -> str:
@@ -481,7 +487,7 @@ def generate_architecture(result: AnalysisResult) -> str:
         file_tree=generate_file_tree(result.files),
     )
 
-    return call_claude(prompt)
+    return call_llm(prompt)
 
 
 def generate_core_files(result: AnalysisResult) -> str:
@@ -502,7 +508,7 @@ def generate_core_files(result: AnalysisResult) -> str:
         critical_files=format_file_content(critical_files, max_tokens=50000),
     )
 
-    return call_claude(prompt)
+    return call_llm(prompt)
 
 
 def identify_modules(result: AnalysisResult) -> List[Dict]:
@@ -569,7 +575,7 @@ def generate_deep_dive(module: Dict, result: AnalysisResult) -> str:
         framework_context=framework_context or "No specific framework context available.",
     )
 
-    return call_claude(prompt)
+    return call_llm(prompt)
 
 
 def generate_quality_analysis(result: AnalysisResult) -> str:
@@ -600,7 +606,7 @@ def generate_quality_analysis(result: AnalysisResult) -> str:
         config_files=format_file_content(config_files, max_tokens=10000),
     )
 
-    return call_claude(prompt)
+    return call_llm(prompt)
 
 
 def generate_next_steps(result: AnalysisResult) -> str:
@@ -621,7 +627,7 @@ def generate_next_steps(result: AnalysisResult) -> str:
         modules=module_names,
     )
 
-    return call_claude(prompt)
+    return call_llm(prompt)
 
 
 def generate_documentation(
@@ -732,4 +738,4 @@ def generate_explain_document(
         file_type=file_type,
     )
 
-    return call_claude(prompt)
+    return call_llm(prompt)

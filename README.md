@@ -32,8 +32,11 @@ pip install code-guro
 
 **Requirements:**
 - Python 3.8 or higher
-- Internet connection (for Claude API calls)
-- Claude API key from [console.anthropic.com](https://console.anthropic.com)
+- Internet connection (for LLM API calls)
+- API key from one of the supported providers:
+  - **Anthropic Claude**: [console.anthropic.com](https://console.anthropic.com)
+  - **OpenAI GPT-4o**: [platform.openai.com/api-keys](https://platform.openai.com/api-keys)
+  - **Google Gemini**: [aistudio.google.com/app/apikey](https://aistudio.google.com/app/apikey)
 
 ## Upgrading
 
@@ -71,19 +74,32 @@ See [CHANGELOG.md](CHANGELOG.md) for detailed release notes.
 
 ## Quick Start
 
-### 1. Configure your API key
+### 1. Configure your LLM provider
 
 ```bash
 code-guro configure
 ```
 
-You'll be prompted to enter your Claude API key. The key is stored securely in `~/.config/code-guro/config.json` with restricted file permissions.
+You'll be prompted to select a provider (Anthropic Claude, OpenAI GPT-4o, or Google Gemini) and guided through setting up your API key as an environment variable.
 
-Alternatively, you can set the `CLAUDE_API_KEY` or `ANTHROPIC_API_KEY` environment variable:
+**Setting up API keys:**
 
+For **Anthropic Claude**:
 ```bash
-export CLAUDE_API_KEY="your-api-key-here"
+export ANTHROPIC_API_KEY="your-api-key-here"
 ```
+
+For **OpenAI GPT-4o**:
+```bash
+export OPENAI_API_KEY="your-api-key-here"
+```
+
+For **Google Gemini**:
+```bash
+export GOOGLE_API_KEY="your-api-key-here"
+```
+
+You can add these to your `~/.zshrc` or `~/.bashrc` to make them permanent. The provider selection is stored in `~/.config/code-guro/config.json` (API keys are never stored on disk for security).
 
 ### 2. Analyze a codebase
 

@@ -103,36 +103,45 @@ ALWAYS_SKIP = {
 # Maximum file size to read (1MB)
 MAX_FILE_SIZE = 1024 * 1024
 
-# Claude API pricing (as of MVP)
-CLAUDE_INPUT_COST_PER_MILLION = 3.0  # $3 per million input tokens
-CLAUDE_OUTPUT_COST_PER_MILLION = 15.0  # $15 per million output tokens
-
-# Context window limits
-MAX_CONTEXT_TOKENS = 200000  # Claude 3.5 Sonnet context
+# Context window limits (conservative limits that work across providers)
+MAX_CONTEXT_TOKENS = 200000  # Maximum context window
 SAFE_CONTEXT_TOKENS = 150000  # Leave room for response
 
 
 def get_encoding():
-    """Get the tiktoken encoding for Claude models."""
-    # Claude uses cl100k_base encoding (same as GPT-4)
+    """Get the tiktoken encoding for token counting.
+
+    Uses cl100k_base encoding which works for Anthropic Claude and OpenAI models.
+    For Google Gemini, this is an approximation.
+    """
     return tiktoken.get_encoding("cl100k_base")
 
 
 def count_tokens(text: str) -> int:
-    """Count tokens in a text string.
+    """Count tokens in a text string using the configured provider's tokenizer.
 
     Args:
         text: The text to count tokens for
 
     Returns:
         Number of tokens
+
+    Note:
+        Falls back to tiktoken if provider is not configured (for backwards compatibility).
     """
-    encoding = get_encoding()
-    return len(encoding.encode(text))
+    try:
+        from code_guro.providers.factory import get_provider
+
+        provider = get_provider()
+        return provider.count_tokens(text)
+    except (ValueError, Exception):
+        # Fallback to tiktoken for backwards compatibility
+        encoding = get_encoding()
+        return len(encoding.encode(text))
 
 
 def estimate_cost(input_tokens: int, output_tokens: int = 0) -> float:
-    """Estimate API cost based on token counts.
+    """Estimate API cost based on token counts using the configured provider.
 
     Args:
         input_tokens: Number of input tokens
@@ -140,10 +149,23 @@ def estimate_cost(input_tokens: int, output_tokens: int = 0) -> float:
 
     Returns:
         Estimated cost in USD
+
+    Note:
+        Falls back to Anthropic pricing if provider is not configured (for backwards compatibility).
     """
-    input_cost = (input_tokens / 1_000_000) * CLAUDE_INPUT_COST_PER_MILLION
-    output_cost = (output_tokens / 1_000_000) * CLAUDE_OUTPUT_COST_PER_MILLION
-    return input_cost + output_cost
+    try:
+        from code_guro.providers.factory import get_provider
+
+        provider = get_provider()
+        return provider.estimate_cost(input_tokens, output_tokens)
+    except (ValueError, Exception):
+        # Fallback to Anthropic pricing for backwards compatibility
+        # This handles cases where provider is not yet configured
+        ANTHROPIC_INPUT_COST_PER_MILLION = 3.0
+        ANTHROPIC_OUTPUT_COST_PER_MILLION = 15.0
+        input_cost = (input_tokens / 1_000_000) * ANTHROPIC_INPUT_COST_PER_MILLION
+        output_cost = (output_tokens / 1_000_000) * ANTHROPIC_OUTPUT_COST_PER_MILLION
+        return input_cost + output_cost
 
 
 def format_cost(cost: float) -> str:

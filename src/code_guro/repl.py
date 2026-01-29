@@ -7,21 +7,17 @@ from datetime import datetime
 from pathlib import Path
 from typing import List, Tuple
 
-import anthropic
 from rich.console import Console
 from rich.markdown import Markdown
 from rich.panel import Panel
 from rich.prompt import Prompt
 
-from code_guro.config import get_api_key
 from code_guro.frameworks import FrameworkInfo
 from code_guro.generator import create_output_dir
 from code_guro.prompts import INTERACTIVE_SYSTEM_PROMPT
+from code_guro.providers.factory import get_provider
 
 console = Console()
-
-# Model for interactive mode (use faster model for responsiveness)
-MODEL = "claude-sonnet-4-20250514"
 
 # Maximum conversation history to maintain
 MAX_HISTORY_PAIRS = 10
@@ -99,12 +95,11 @@ def start_repl(
         content: Content of the file/folder
         frameworks: Detected frameworks
     """
-    api_key = get_api_key()
-    client = anthropic.Anthropic(api_key=api_key)
-
+    provider = get_provider()
     system_prompt = create_system_prompt(path, content, frameworks)
     conversation_history: List[Tuple[str, str]] = []
-    messages: List[dict] = []
+    # Store conversation as simple prompt strings for provider abstraction
+    conversation_context = ""
 
     # Welcome message
     console.print()
@@ -135,61 +130,71 @@ def start_repl(
             if not question.strip():
                 continue
 
-            # Add user message
-            messages.append({"role": "user", "content": question})
+            # Build prompt with conversation history
+            # For simplicity, include recent conversation in the prompt
+            # This works across all providers
+            prompt_parts = []
+            if conversation_context:
+                prompt_parts.append("Previous conversation:")
+                prompt_parts.append(conversation_context)
+                prompt_parts.append("")
+            prompt_parts.append(f"User question: {question}")
+
+            full_prompt = "\n".join(prompt_parts)
 
             # Check if conversation is getting too long
-            if len(messages) > MAX_HISTORY_PAIRS * 2:
+            if len(conversation_history) >= MAX_HISTORY_PAIRS:
                 console.print(
                     "[yellow]Note:[/yellow] Conversation is getting long. "
                     "Consider starting a fresh session for best results."
                 )
                 # Keep only the last N pairs
-                messages = messages[-(MAX_HISTORY_PAIRS * 2) :]
+                conversation_history = conversation_history[-MAX_HISTORY_PAIRS:]
+                # Rebuild context from remaining history
+                conversation_context = "\n".join(
+                    f"Q: {q}\nA: {a}" for q, a in conversation_history
+                )
 
             # Call API
             console.print()
             console.print("[dim]Thinking...[/dim]")
 
             try:
-                response = client.messages.create(
-                    model=MODEL,
-                    max_tokens=2048,
+                answer = provider.call(
+                    prompt=full_prompt,
                     system=system_prompt,
-                    messages=messages,
+                    max_tokens=2048,
                 )
 
-                answer = response.content[0].text
-
-                # Add assistant message to history
-                messages.append({"role": "assistant", "content": answer})
+                # Add to conversation history
                 conversation_history.append((question, answer))
+                # Update context (keep last few exchanges)
+                recent_history = conversation_history[-3:]  # Last 3 Q&A pairs
+                conversation_context = "\n".join(
+                    f"Q: {q}\nA: {a}" for q, a in recent_history
+                )
 
                 # Display response with markdown formatting
                 console.print()
                 console.print(Markdown(answer))
                 console.print()
 
-            except anthropic.RateLimitError:
-                console.print(
-                    "[yellow]Rate limit reached.[/yellow] "
-                    "Please wait a moment before asking another question."
-                )
-                # Remove the user message since we didn't get a response
-                messages.pop()
-
-            except anthropic.APIConnectionError:
-                console.print(
-                    "[red]Connection error.[/red] "
-                    "Please check your internet connection and try again."
-                )
-                # Remove the user message since we didn't get a response
-                messages.pop()
-
             except Exception as e:
-                console.print(f"[red]Error:[/red] {str(e)}")
-                # Remove the user message since we didn't get a response
-                messages.pop()
+                from code_guro.errors import handle_api_error
+
+                error_msg = str(e).lower()
+                if "rate limit" in error_msg or "quota" in error_msg:
+                    console.print(
+                        "[yellow]Rate limit reached.[/yellow] "
+                        "Please wait a moment before asking another question."
+                    )
+                elif "connection" in error_msg or "network" in error_msg:
+                    console.print(
+                        "[red]Connection error.[/red] "
+                        "Please check your internet connection and try again."
+                    )
+                else:
+                    handle_api_error(e, provider.get_provider_name().lower())
 
     except KeyboardInterrupt:
         console.print("\n")

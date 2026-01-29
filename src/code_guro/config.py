@@ -1,6 +1,7 @@
 """Configuration management for Code Guro.
 
-Handles API key storage, retrieval, and validation.
+Handles provider selection and configuration.
+API keys are stored in environment variables only.
 """
 
 from __future__ import annotations
@@ -11,16 +12,12 @@ import stat
 from pathlib import Path
 from typing import Optional
 
-import anthropic
 from rich.console import Console
 
 console = Console()
 
-# Environment variable name for API key (takes precedence)
-API_KEY_ENV_VAR = "CLAUDE_API_KEY"
-
-# Alternative environment variable name (Anthropic SDK default)
-ANTHROPIC_API_KEY_ENV_VAR = "ANTHROPIC_API_KEY"
+# Valid provider names
+VALID_PROVIDERS = ["anthropic", "openai", "google"]
 
 
 def get_config_dir() -> Path:
@@ -92,63 +89,37 @@ def write_config(config: dict) -> None:
         os.chmod(config_file, stat.S_IRUSR | stat.S_IWUSR)
 
 
-def get_api_key() -> Optional[str]:
-    """Get the Claude API key from environment or config file.
-
-    Environment variables take precedence over config file.
+def get_provider_config() -> Optional[str]:
+    """Get the selected provider from config file.
 
     Returns:
-        API key string or None if not configured
+        Provider name string or None if not configured
     """
-    # Check environment variables first (in order of preference)
-    for env_var in [API_KEY_ENV_VAR, ANTHROPIC_API_KEY_ENV_VAR]:
-        key = os.environ.get(env_var)
-        if key:
-            return key
-
-    # Fall back to config file
     config = read_config()
-    return config.get("api_key")
+    provider = config.get("provider")
+
+    # Backwards compatibility: if old config has api_key, assume anthropic
+    if not provider and config.get("api_key"):
+        return "anthropic"
+
+    return provider
 
 
-def save_api_key(api_key: str) -> None:
-    """Save API key to config file.
+def save_provider_config(provider: str) -> None:
+    """Save provider selection to config file.
 
     Args:
-        api_key: The Claude API key to save
+        provider: The provider name to save (must be in VALID_PROVIDERS)
     """
+    if provider not in VALID_PROVIDERS:
+        raise ValueError(f"Invalid provider: {provider}. Valid providers: {VALID_PROVIDERS}")
+
     config = read_config()
-    config["api_key"] = api_key
+    config["provider"] = provider
+    # Remove old api_key if present (migration)
+    if "api_key" in config:
+        del config["api_key"]
     write_config(config)
-
-
-def validate_api_key(api_key: str) -> tuple[bool, str]:
-    """Validate an API key by making a test request.
-
-    Args:
-        api_key: The API key to validate
-
-    Returns:
-        Tuple of (is_valid, message)
-    """
-    try:
-        client = anthropic.Anthropic(api_key=api_key)
-        # Make a minimal request to validate the key
-        client.messages.create(
-            model="claude-3-haiku-20240307",
-            max_tokens=10,
-            messages=[{"role": "user", "content": "Hi"}],
-        )
-        return True, "API key is valid"
-    except anthropic.AuthenticationError:
-        return False, "Invalid API key. Please check your key and try again."
-    except anthropic.RateLimitError:
-        # Key is valid but rate limited - still counts as valid
-        return True, "API key is valid (rate limited)"
-    except anthropic.APIConnectionError:
-        return False, "Could not connect to Anthropic API. Check your internet connection."
-    except Exception as e:
-        return False, f"Error validating API key: {str(e)}"
 
 
 def mask_api_key(api_key: str) -> str:
@@ -158,36 +129,101 @@ def mask_api_key(api_key: str) -> str:
         api_key: The API key to mask
 
     Returns:
-        Masked string like "sk-ant-...xxxx"
+        Masked string like "sk-ant-...xxxx" or "sk-...xxxx"
     """
     if not api_key or len(api_key) < 8:
         return "****"
     return f"{api_key[:7]}...{api_key[-4:]}"
 
 
-def require_api_key() -> Optional[str]:
-    """Check if API key is configured and return it.
+def require_provider() -> Optional[str]:
+    """Check if a provider is configured and return it.
 
     Prints helpful error message if not configured.
 
     Returns:
-        API key if available, None otherwise
+        Provider name if available, None otherwise
     """
-    api_key = get_api_key()
-    if not api_key:
+    from code_guro.providers.factory import get_provider
+
+    try:
+        provider = get_provider()
+    except ValueError:
         console.print(
-            "[bold red]Error:[/bold red] No API key configured.\n"
+            "[bold red]Error:[/bold red] No provider configured.\n"
             "\n"
-            "Please run [bold cyan]code-guro configure[/bold cyan] to set up your Claude API key.\n"
-            "\n"
-            "You can get an API key at: [link=https://console.anthropic.com]console.anthropic.com[/link]"
+            "Please run [bold cyan]code-guro configure[/bold cyan] to set up your LLM provider.\n"
         )
         return None
-    return api_key
+    api_key = provider.get_api_key()
+    if not api_key:
+        console.print(
+            "[bold red]Error:[/bold red] No API key configured for this provider.\n"
+            "\n"
+            f"Please set the [bold cyan]{provider.get_api_key_env_var()}[/bold cyan] "
+            "environment variable and try again.\n"
+            "\n"
+            f"Get your API key at: [link={provider.get_api_key_url()}]"
+            f"{provider.get_api_key_url()}[/link]"
+        )
+        return None
+
+    return provider.get_provider_name().lower()
+
+
+def is_provider_configured() -> bool:
+    """Check if a provider is configured.
+
+    Returns:
+        True if provider is configured and API key is available
+    """
+    try:
+        from code_guro.providers.factory import get_provider
+
+        provider = get_provider()
+        # Check if API key is available
+        return provider.get_api_key() is not None
+    except (ValueError, Exception):
+        return False
+
+
+# Backwards compatibility functions (deprecated)
+def get_api_key() -> Optional[str]:
+    """DEPRECATED: Get API key from environment or legacy config.
+
+    This function is kept for backwards compatibility but should not be used.
+    Use get_provider() from providers.factory instead.
+
+    Returns:
+        API key string or None if not configured
+    """
+    # Check environment variables first (legacy Anthropic behavior)
+    for env_var in ["CLAUDE_API_KEY", "ANTHROPIC_API_KEY"]:
+        key = os.environ.get(env_var)
+        if key:
+            return key
+
+    # Fall back to legacy config file key if present
+    config = read_config()
+    return config.get("api_key")
+
+
+def save_api_key(api_key: str) -> None:
+    """DEPRECATED: Save API key to config file.
+
+    This function is kept for backwards compatibility but should not be used.
+    API keys are now stored in environment variables.
+    """
+    config = read_config()
+    config["api_key"] = api_key
+    write_config(config)
 
 
 def is_api_key_configured() -> bool:
-    """Check if an API key is configured.
+    """DEPRECATED: Check if API key is configured.
+
+    This function is kept for backwards compatibility.
+    Use is_provider_configured() instead.
 
     Returns:
         True if API key is available
