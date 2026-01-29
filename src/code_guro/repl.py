@@ -23,7 +23,9 @@ console = Console()
 MAX_HISTORY_PAIRS = 10
 
 
-def create_system_prompt(path: Path, content: str, frameworks: List[FrameworkInfo]) -> str:
+def create_system_prompt(
+    path: Path, content: str, frameworks: List[FrameworkInfo]
+) -> str:
     """Create a system prompt for interactive mode.
 
     Args:
@@ -205,7 +207,9 @@ def start_repl(
             # Find project root for output
             parent = path.parent if path.is_file() else path
             while parent != parent.parent:
-                if (parent / "package.json").exists() or (parent / "pyproject.toml").exists():
+                if (parent / "package.json").exists() or (
+                    parent / "pyproject.toml"
+                ).exists():
                     break
                 parent = parent.parent
 

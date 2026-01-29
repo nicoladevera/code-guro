@@ -194,7 +194,8 @@ def analyze(path: str, markdown_only: bool):
             console.print(f"    [cyan]html/[/cyan] ({len(html_files)} files)")
             console.print()
             console.print(
-                f"[dim]Open {html_dir}/00-overview.html in your browser for the best experience![/dim]"
+                f"[dim]Open {html_dir}/00-overview.html in your browser for the best "
+                "experience![/dim]"
             )
 
         console.print()
@@ -429,7 +430,9 @@ def configure():
             current_provider = get_provider(current_provider_name)
             current_key = current_provider.get_api_key()
             if current_key:
-                console.print(f"Current provider: [cyan]{current_provider.get_provider_name()}[/cyan]")
+                console.print(
+                    f"Current provider: [cyan]{current_provider.get_provider_name()}[/cyan]"
+                )
                 console.print(f"Current API key: [cyan]{mask_api_key(current_key)}[/cyan]")
                 console.print()
 
@@ -531,7 +534,9 @@ def configure():
                 f"Make sure {selected_env_var} is set before running commands."
             )
         console.print()
-        console.print("You can now use [bold cyan]code-guro analyze[/bold cyan] to analyze a codebase.")
+        console.print(
+            "You can now use [bold cyan]code-guro analyze[/bold cyan] to analyze a codebase."
+        )
 
     except Exception as e:
         console.print(f"[red]Error:[/red] {str(e)}")

@@ -430,11 +430,20 @@ class TestConfigureCommand:
                 return None
 
             def validate_api_key(self, api_key=None):
-                return (self._is_valid, "Valid" if self._is_valid else "Invalid API key")
+                return (
+                    self._is_valid,
+                    "Valid" if self._is_valid else "Invalid API key",
+                )
 
         # Mock provider selection and config save
-        monkeypatch.setattr("code_guro.providers.factory.list_providers", lambda: ["anthropic"])
-        monkeypatch.setattr("code_guro.providers.factory.get_provider", lambda *_: DummyProvider(True))
+        monkeypatch.setattr(
+            "code_guro.providers.factory.list_providers",
+            lambda: ["anthropic"],
+        )
+        monkeypatch.setattr(
+            "code_guro.providers.factory.get_provider",
+            lambda *_: DummyProvider(True),
+        )
         monkeypatch.setattr("code_guro.cli.save_provider_config", lambda _: None)
         monkeypatch.setattr("code_guro.cli.get_provider_config", lambda: None)
 
@@ -468,8 +477,14 @@ class TestConfigureCommand:
             def validate_api_key(self, api_key=None):
                 return (self._is_valid, "Invalid API key")
 
-        monkeypatch.setattr("code_guro.providers.factory.list_providers", lambda: ["anthropic"])
-        monkeypatch.setattr("code_guro.providers.factory.get_provider", lambda *_: DummyProvider(False))
+        monkeypatch.setattr(
+            "code_guro.providers.factory.list_providers",
+            lambda: ["anthropic"],
+        )
+        monkeypatch.setattr(
+            "code_guro.providers.factory.get_provider",
+            lambda *_: DummyProvider(False),
+        )
         monkeypatch.setattr("code_guro.cli.get_provider_config", lambda: None)
 
         result = runner.invoke(main, ["configure"], input="1\ny\ninvalid-key\n")

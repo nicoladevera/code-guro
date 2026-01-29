@@ -34,7 +34,9 @@ class GeminiProvider(LLMProvider):
         if not self._client_initialized:
             api_key = self.get_api_key()
             if not api_key:
-                raise ValueError("Google API key not configured. Set GOOGLE_API_KEY environment variable.")
+                raise ValueError(
+                    "Google API key not configured. Set GOOGLE_API_KEY environment variable."
+                )
             genai.configure(api_key=api_key)
             self._client_initialized = True
 
@@ -136,14 +138,19 @@ class GeminiProvider(LLMProvider):
             model = genai.GenerativeModel(model_name="gemini-2.0-flash-exp")
             # Make a minimal request to validate the key
             model.generate_content(
-                "Hi", generation_config=genai.types.GenerationConfig(max_output_tokens=10)
+                "Hi",
+                generation_config=genai.types.GenerationConfig(max_output_tokens=10),
             )
             # Reset client initialization state
             self._client_initialized = False
             return True, "API key is valid"
         except Exception as e:
             error_str = str(e).lower()
-            if "api_key" in error_str or "authentication" in error_str or "invalid" in error_str:
+            if (
+                "api_key" in error_str
+                or "authentication" in error_str
+                or "invalid" in error_str
+            ):
                 return False, "Invalid API key. Please check your key and try again."
             elif "quota" in error_str or "rate" in error_str:
                 # Key is valid but rate limited - still counts as valid
