@@ -39,11 +39,13 @@ This document provides essential context for AI agents and developers working wi
 
 ### Environment Requirements
 - Internet connection required (connects to provider APIs)
-- LLM provider API key (set via environment variables):
+- LLM provider API key (can be configured via `code-guro configure` or environment variables):
   - **Anthropic**: `ANTHROPIC_API_KEY` or `CLAUDE_API_KEY` (backwards compatibility)
   - **OpenAI**: `OPENAI_API_KEY`
   - **Google**: `GOOGLE_API_KEY` or `GEMINI_API_KEY` (backwards compatibility)
-- Provider selection via `code-guro configure` (stored in `~/.config/code-guro/config.json`)
+- Provider selection and API key storage via `code-guro configure` (stored in `~/.config/code-guro/config.json`)
+- **New in Phase 1**: API keys can be stored securely in config file with permissions 0o600 (Unix systems)
+- **Fallback behavior**: Environment variables still work for backwards compatibility and CI/CD workflows
 - Token encoding: `cl100k_base` (for Anthropic/OpenAI), provider-specific for Google Gemini
 
 ---
@@ -122,7 +124,125 @@ All providers implement the `LLMProvider` interface with methods: `call()`, `val
 
 ---
 
-## 3. Development Commands
+## 3. Phase 1 UX Improvements (Implemented)
+
+### Overview
+Phase 1 focused on making Code Guro more accessible to non-technical users without architectural changes. Three key features were implemented:
+
+### 3.1. Improved Console Output
+**Goal**: Replace technical messages with friendly, milestone-based progress feedback.
+
+**Features**:
+- **Emoji support**: Visual indicators (📊, ✓, ⏳, 📄, 🌐) with `--no-emoji` flag fallback
+- **Milestone tracking**: Clear progress markers for scan completion, framework detection, documentation generation
+- **Time estimates**: Displays estimated and actual durations for major operations
+- **Organized output**: Structured sections with document summaries and next steps
+- **User preference**: Emoji preference stored in config (`emoji_enabled` in preferences)
+
+**Implementation files**:
+- `src/code_guro/cli.py` - Updated `analyze()` command with progress tracking
+- `src/code_guro/analyzer.py` - Added `progress_callback` parameter and event emission
+- `src/code_guro/config.py` - Added `get_preference()` and `set_preference()` functions
+
+**Usage**:
+```bash
+code-guro analyze .              # Uses emojis by default
+code-guro analyze . --no-emoji   # Disables emojis
+```
+
+### 3.2. Interactive Setup Wizard
+**Goal**: Replace manual environment variable configuration with interactive API key input.
+
+**Features**:
+- **Interactive prompts**: Guides users through provider selection with descriptions
+- **Secure API key storage**: Keys stored in `~/.config/code-guro/config.json` with 0o600 permissions
+- **Immediate validation**: Tests API key before saving
+- **Provider details**: Shows cost information, use cases, and API key URLs
+- **Backwards compatibility**: Environment variables still work as fallback
+
+**Config schema (v2)**:
+```json
+{
+  "config_version": 2,
+  "provider": "anthropic",
+  "api_keys": {
+    "anthropic": "sk-ant-...",
+    "openai": "sk-...",
+    "google": "AI..."
+  },
+  "preferences": {
+    "emoji_enabled": true
+  }
+}
+```
+
+**API key priority** (checked in order):
+1. Config file (`~/.config/code-guro/config.json`)
+2. Environment variables (backwards compatibility)
+3. Prompt user to run `code-guro configure`
+
+**Implementation files**:
+- `src/code_guro/config.py` - Added `save_api_key_to_config()`, `get_api_key_from_config()`
+- `src/code_guro/cli.py` - Completely rewrote `configure()` command
+- `src/code_guro/providers/*.py` - Updated all providers to check config before environment
+
+**Security**:
+- Plain text storage with secure file permissions (0o600 on Unix systems)
+- Only readable by file owner
+- Future-proof design allows adding encryption layer later
+
+**Usage**:
+```bash
+code-guro configure  # Interactive setup wizard
+```
+
+### 3.3. Smart Defaults
+**Goal**: Enable `code-guro` with no arguments to analyze current directory.
+
+**Features**:
+- **Zero-argument invocation**: Running `code-guro` alone triggers smart behavior
+- **Provider check**: Prompts to configure if no provider set up
+- **Project detection**: Automatically analyzes current directory after confirmation
+- **Dry-run preview**: Shows estimated files, tokens, cost before full analysis
+- **Edge case handling**:
+  - Home directory warning (prevents analyzing thousands of files)
+  - No code files found (helpful error messages)
+  - Recently analyzed (offers to skip or re-analyze)
+- **Welcome experience**: Friendly first-time user flow
+
+**Dry-run mode** (added to `analyze_codebase()`):
+- Fast file counting without reading content
+- Framework detection
+- Token estimation (rough: ~200 tokens per file)
+- Cost estimation
+- Returns lightweight `AnalysisResult`
+
+**Implementation files**:
+- `src/code_guro/cli.py` - Modified `main()` to support `invoke_without_command`, added `handle_zero_argument_flow()`
+- `src/code_guro/analyzer.py` - Added `dry_run` parameter to `analyze_codebase()`
+
+**Usage**:
+```bash
+cd /path/to/project
+code-guro           # No arguments needed!
+```
+
+### Backward Compatibility
+All Phase 1 features maintain full backward compatibility:
+- ✅ Existing commands work exactly as before
+- ✅ Environment variables still checked (config file has priority)
+- ✅ Old config format gracefully works (no migration required, new fields optional)
+- ✅ New flags are optional (`--no-emoji`)
+- ✅ Zero-argument behavior is additive (doesn't break `code-guro --help`, etc.)
+
+### Configuration Versioning
+- **Version 1** (legacy): `{"provider": "anthropic"}`
+- **Version 2** (Phase 1): Adds `config_version`, `api_keys`, `preferences`
+- Missing fields use sensible defaults (graceful degradation)
+
+---
+
+## 4. Development Commands
 
 ### Installation
 
@@ -188,14 +308,20 @@ pytest                  # Run tests
 ### CLI Commands
 
 ```bash
-# Configure provider and API key
+# Zero-argument smart default (Phase 1)
+code-guro
+# Detects current directory, shows preview, asks for confirmation
+
+# Configure provider and API key (Phase 1 enhanced)
 code-guro configure
-# Selects provider and validates API key from environment variable
+# Interactive wizard: provider selection, API key input, immediate validation
+# Keys stored securely in ~/.config/code-guro/config.json
 
 # Analyze a local codebase (generates both HTML and markdown by default)
 code-guro analyze .
 code-guro analyze /path/to/project
 code-guro analyze . --markdown-only  # Generate only markdown
+code-guro analyze . --no-emoji      # Disable emoji in output (Phase 1)
 
 # Analyze a GitHub repository
 code-guro analyze https://github.com/user/repo
@@ -215,7 +341,7 @@ code-guro --version
 
 ---
 
-## 4. Testing Strategy
+## 5. Testing Strategy
 
 ### Test Framework
 - **pytest** with verbose output and short tracebacks
@@ -257,7 +383,7 @@ class TestTokenCounting:
 
 ---
 
-## 5. Code Style & Standards
+## 6. Code Style & Standards
 
 ### Formatting (Black + Ruff)
 - **Line length**: 100 characters
@@ -328,7 +454,7 @@ from code_guro.cli import main
 
 ---
 
-## 6. Boundaries & Constraints
+## 7. Boundaries & Constraints
 
 ### NEVER Modify or Commit
 
@@ -373,7 +499,7 @@ Cost estimation is provider-specific:
 
 ---
 
-## 7. Git Workflow
+## 8. Git Workflow
 
 ### Branching Strategy
 - **`main`**: Production-ready code, always stable
@@ -464,7 +590,7 @@ code-guro-output/
 
 ---
 
-## 8. Common Linting Issues & Solutions
+## 9. Common Linting Issues & Solutions
 
 ### I001: Import block is un-sorted or un-formatted
 

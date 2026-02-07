@@ -3,6 +3,7 @@
 Generates structured learning documentation from codebase analysis.
 """
 
+import time
 from pathlib import Path
 from typing import Dict, List
 
@@ -36,6 +37,12 @@ OUTPUT_DIR = "code-guro-output"
 
 # Claude model to use (legacy fallback when provider not configured)
 MODEL = "claude-sonnet-4-20250514"
+
+# Rate limiting: Track last API call time and token usage for intelligent delays
+_last_api_call_time = 0.0
+_last_call_input_tokens = 0
+_tokens_per_minute_limit = 30000  # Anthropic Build tier limit
+_min_delay_between_calls = 2.0  # Minimum 2 seconds between calls
 
 
 def create_output_dir(root: Path) -> Path:
@@ -114,6 +121,8 @@ def format_file_content(files: List[FileInfo], max_tokens: int = 50000) -> str:
 def call_llm(prompt: str, system: str = SYSTEM_PROMPT) -> str:
     """Make a call to the LLM API using the configured provider.
 
+    Implements intelligent rate limiting based on token usage and time-based delays.
+
     Args:
         prompt: The user prompt
         system: The system prompt
@@ -121,9 +130,58 @@ def call_llm(prompt: str, system: str = SYSTEM_PROMPT) -> str:
     Returns:
         LLM response text
     """
+    global _last_api_call_time, _last_call_input_tokens
+
+    # Intelligent rate limiting: Calculate delay based on previous token usage
+    if _last_api_call_time > 0 and _last_call_input_tokens > 0:
+        elapsed = time.time() - _last_api_call_time
+
+        # Calculate how long we should wait based on previous call's tokens
+        # If previous call used X tokens, we need to wait until those tokens "expire" from sliding window
+        # With 30k tokens/minute limit, tokens "expire" after 60 seconds
+        tokens_cleared_per_second = _tokens_per_minute_limit / 60.0  # 500 tokens/second
+
+        # How many tokens from previous call are still in the sliding window?
+        tokens_still_in_window = max(
+            0, _last_call_input_tokens - (elapsed * tokens_cleared_per_second)
+        )
+
+        # Estimate tokens for upcoming call
+        estimated_next_tokens = len(prompt + system) / 4  # Rough estimate: 4 chars per token
+
+        # Will this call exceed the limit?
+        if tokens_still_in_window + estimated_next_tokens > _tokens_per_minute_limit:
+            # Calculate additional delay needed
+            tokens_to_clear = (
+                tokens_still_in_window + estimated_next_tokens
+            ) - _tokens_per_minute_limit
+            additional_delay = tokens_to_clear / tokens_cleared_per_second
+            total_delay = max(_min_delay_between_calls - elapsed, additional_delay)
+
+            if total_delay > 0:
+                time.sleep(total_delay)
+        elif elapsed < _min_delay_between_calls:
+            # Fallback to minimum delay if we don't estimate exceeding limit
+            delay = _min_delay_between_calls - elapsed
+            time.sleep(delay)
+    elif _last_api_call_time > 0:
+        # First-time fallback: just ensure minimum delay
+        elapsed = time.time() - _last_api_call_time
+        if elapsed < _min_delay_between_calls:
+            time.sleep(_min_delay_between_calls - elapsed)
+
     try:
         provider = get_provider()
-        return provider.call(prompt=prompt, system=system, max_tokens=4096)
+        result = provider.call(prompt=prompt, system=system, max_tokens=4096)
+
+        # Update tracking after successful call
+        _last_api_call_time = time.time()
+
+        # Try to get actual token count from provider (if available in result metadata)
+        # For now, estimate based on char count
+        _last_call_input_tokens = int(len(prompt + system) / 4)
+
+        return result
     except ValueError:
         # Legacy fallback for tests/backwards compatibility
         api_key = get_api_key()
@@ -135,6 +193,10 @@ def call_llm(prompt: str, system: str = SYSTEM_PROMPT) -> str:
             system=system,
             messages=[{"role": "user", "content": prompt}],
         )
+
+        # Update tracking
+        _last_api_call_time = time.time()
+        _last_call_input_tokens = int(len(prompt + system) / 4)
 
         return message.content[0].text
 
@@ -673,10 +735,10 @@ def generate_documentation(
             TaskProgressColumn(),
             console=console,
         ) as progress:
-            task = progress.add_task("Generating documentation...", total=len(documents) + 1)
+            task = progress.add_task("", total=len(documents) + 1)
 
             # Generate main documents
-            for filename, description, generator in documents:
+            for _idx, (filename, description, generator) in enumerate(documents):
                 progress.update(task, description=description)
                 content = generator(result)
 
@@ -695,6 +757,7 @@ def generate_documentation(
                 filepath.write_text(content)
 
             progress.advance(task)
+            progress.update(task, description="Documentation generation complete")
 
     # Generate HTML by default (unless markdown_only is True)
     if not markdown_only:
@@ -703,10 +766,6 @@ def generate_documentation(
         html_dir = output_dir / "html"
         html_dir.mkdir(exist_ok=True)
         convert_directory_to_html_organized(markdown_dir, html_dir)
-
-    console.print()
-    console.print("[green]Documentation generated successfully![/green]")
-    console.print(f"[dim]Output directory: {output_dir}[/dim]")
 
     return output_dir
 

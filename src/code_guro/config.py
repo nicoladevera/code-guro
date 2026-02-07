@@ -89,6 +89,78 @@ def write_config(config: dict) -> None:
         os.chmod(config_file, stat.S_IRUSR | stat.S_IWUSR)
 
 
+def get_preference(key: str, default=None):
+    """Get a preference value from config.
+
+    Args:
+        key: Preference key
+        default: Default value if not found
+
+    Returns:
+        Preference value or default
+    """
+    config = read_config()
+    preferences = config.get("preferences", {})
+    return preferences.get(key, default)
+
+
+def set_preference(key: str, value) -> None:
+    """Set a preference value in config.
+
+    Args:
+        key: Preference key
+        value: Preference value
+    """
+    config = read_config()
+    if "preferences" not in config:
+        config["preferences"] = {}
+    config["preferences"][key] = value
+    write_config(config)
+
+
+def save_api_key_to_config(provider: str, api_key: str) -> None:
+    """Save an API key to the config file for a specific provider.
+
+    Args:
+        provider: Provider name (e.g., "anthropic", "openai", "google")
+        api_key: API key to save
+
+    Note:
+        API keys are stored in plain text with secure file permissions (0o600).
+    """
+    if provider not in VALID_PROVIDERS:
+        raise ValueError(f"Invalid provider: {provider}. Valid providers: {VALID_PROVIDERS}")
+
+    config = read_config()
+
+    # Ensure config version is set
+    if "config_version" not in config:
+        config["config_version"] = 2
+
+    # Initialize api_keys dict if not present
+    if "api_keys" not in config:
+        config["api_keys"] = {}
+
+    # Save the API key
+    config["api_keys"][provider] = api_key
+
+    write_config(config)
+
+
+def get_api_key_from_config(provider: str) -> Optional[str]:
+    """Get an API key from the config file for a specific provider.
+
+    Args:
+        provider: Provider name (e.g., "anthropic", "openai", "google")
+
+    Returns:
+        API key string or None if not configured
+    """
+    config = read_config()
+    api_keys = config.get("api_keys", {})
+    return api_keys.get(provider)
+
+
 def get_provider_config() -> Optional[str]:
     """Get the selected provider from config file.
 
