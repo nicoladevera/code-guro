@@ -44,8 +44,10 @@ class TestAnalyzeCommand:
         monkeypatch.setattr("code_guro.cli.check_internet_connection", lambda: True)
 
         # Mock analyze_codebase to return test data (imported within the function)
+        # Updated to accept all parameters added in Phase 1
         monkeypatch.setattr(
-            "code_guro.analyzer.analyze_codebase", lambda path: mock_analysis_result
+            "code_guro.analyzer.analyze_codebase",
+            lambda path, show_progress=True, progress_callback=None, dry_run=False: mock_analysis_result,
         )
 
         # Mock confirm_analysis to always return True
@@ -205,7 +207,10 @@ class TestAnalyzeCommand:
             skipped_files=[],
             warnings=[],
         )
-        monkeypatch.setattr("code_guro.analyzer.analyze_codebase", lambda path: empty_result)
+        monkeypatch.setattr(
+            "code_guro.analyzer.analyze_codebase",
+            lambda path, show_progress=True, progress_callback=None, dry_run=False: empty_result,
+        )
 
         with runner.isolated_filesystem(temp_dir=tmp_path):
             (Path.cwd() / "test.txt").write_text("test")
