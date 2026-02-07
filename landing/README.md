@@ -45,9 +45,24 @@ This landing page is intended for static hosting (GitHub Pages, Netlify, Vercel,
 
 ### GitHub Pages Deployment
 
-The landing page can be deployed to GitHub Pages by:
-1. Configuring GitHub Pages to serve from the `landing/` directory
-2. Accessing at: `https://nicoladevera.github.io/code-guro/`
+The landing page is automatically deployed to GitHub Pages via GitHub Actions:
+
+**Setup (one-time):**
+1. Go to repository **Settings** → **Pages**
+2. Under **Source**, select **GitHub Actions**
+3. Save the settings
+
+**Automatic deployment:**
+- Every push to `main` branch triggers automatic deployment
+- The workflow deploys the `landing/` directory contents
+- Live site: `https://nicoladevera.github.io/code-guro/`
+- Deployment takes ~30-60 seconds
+
+**Manual deployment:**
+- Go to **Actions** tab → **Deploy Landing Page** workflow
+- Click **Run workflow** → Select branch → **Run workflow**
+
+**Workflow file:** `.github/workflows/deploy-landing.yml`
 
 ## Content Sections
 
