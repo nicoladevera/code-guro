@@ -79,6 +79,9 @@ code-guro/
 ├── tests/                   # Additional test directory
 │   ├── __init__.py
 │   └── integration/         # Integration tests
+├── landing/                 # Marketing landing page (tracked in git)
+│   ├── index.html           # Self-contained landing page with inline CSS/JS
+│   └── assets/              # Landing page assets (logos)
 ├── assets/                  # Documentation assets (screenshots, images)
 ├── samples/                 # Local reference outputs (git-ignored content)
 │   ├── README.md            # Purpose & regeneration docs (committed)
@@ -467,6 +470,10 @@ from code_guro.cli import main
 | **Build Artifacts** | `build/`, `dist/`, `*.egg-info/` |
 | **IDE Settings** | `.idea/`, `.vscode/` (unless shared configs) |
 
+**Note on tracked directories:**
+- `landing/` - Marketing landing page (intentionally tracked for GitHub Pages deployment)
+- `assets/` - Documentation assets like screenshots (intentionally tracked for README)
+
 ### File Filtering Rules (in analyzer.py)
 These patterns are automatically skipped during analysis:
 
@@ -670,6 +677,7 @@ make quality
 | Update error messages | `src/code_guro/errors.py` |
 | Modify output format | `src/code_guro/generator.py` |
 | Update HTML conversion | `src/code_guro/html_converter.py` |
+| Update landing page | `landing/index.html` |
 | View sample outputs | `samples/markdown/`, `samples/html/` |
 | Update pre-commit hooks | `.pre-commit-config.yaml` |
 | Add make commands | `Makefile` |
