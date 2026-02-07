@@ -220,7 +220,7 @@ The deep dive pages provide in-depth analysis of specific modules, including API
 
 ### `code-guro configure`
 
-Set up your Claude API key for first-time use.
+Set up your LLM provider and API key for first-time use.
 
 ```bash
 code-guro configure
@@ -228,7 +228,7 @@ code-guro configure
 
 ### `code-guro analyze <path>`
 
-Analyze a codebase and generate documentation. By default, generates both HTML and markdown in organized subdirectories.
+Analyze a codebase and generate documentation. Can also be invoked without arguments (`code-guro`) to analyze the current directory with smart defaults (see Quick Start). By default, generates both HTML and markdown in organized subdirectories.
 
 ```bash
 code-guro analyze .                    # Current directory (both formats)
@@ -239,6 +239,7 @@ code-guro analyze . --markdown-only    # Only markdown, no HTML
 
 **Options:**
 - `--markdown-only` - Generate only markdown files without HTML (default: generates both formats)
+- `--no-emoji` - Disable emoji output in console (default: emojis enabled)
 
 ### `code-guro convert [output_dir]`
 
@@ -298,7 +299,7 @@ When a framework is detected, the documentation includes:
 
 Code Guro estimates API costs before running analysis based on:
 - Token count of files to analyze
-- Current Claude API pricing (~$3/million input tokens, ~$15/million output tokens)
+- Provider pricing (varies by selected LLM provider)
 
 **Cost confirmation:**
 - For estimates under $1.00: Proceeds automatically
