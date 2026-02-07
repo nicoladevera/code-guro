@@ -1033,7 +1033,7 @@
 
             try {
                 var xhr = new XMLHttpRequest();
-                xhr.open('GET', '../samples/html/' + filename, true);
+                xhr.open('GET', 'samples/html/' + filename, true);
                 xhr.onload = function() {
                     if (xhr.status === 200 || xhr.status === 0) { // status 0 for file:// protocol
                         htmlCache[filename] = xhr.responseText;

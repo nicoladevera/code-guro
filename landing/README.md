@@ -11,11 +11,15 @@ This directory contains the marketing landing page for Code Guro.
 
 ## Assets
 
-The landing page uses logo assets from the `assets/` subdirectory:
+The landing page uses assets from subdirectories:
 - `assets/logo-light.png` - Logo for light theme
 - `assets/logo-dark.png` - Logo for dark theme
+- `samples/html/` - Sample HTML documentation outputs for preview
 
-These are copies of the optimized logos from the main `assets/` directory.
+**Sample outputs:**
+- The `samples/html/` directory contains copies of generated documentation
+- These are copied from the main `../samples/html/` directory (which is git-ignored)
+- When updating samples, re-copy them: `cp -r ../samples/html/* samples/html/`
 
 ## Features
 
@@ -70,8 +74,9 @@ The landing page is automatically deployed to GitHub Pages via GitHub Actions:
 2. **Problem**: Why Code Guro exists
 3. **Solution**: How Code Guro helps
 4. **How It Works**: 3-step process (Configure, Analyze, Explore)
-5. **Providers**: LLM provider logos (Anthropic, OpenAI, Google)
-6. **Footer**: Links to docs, GitHub, PyPI
+5. **Sample Output**: Interactive preview of generated documentation with tab navigation
+6. **Providers**: LLM provider logos (Anthropic, OpenAI, Google)
+7. **Footer**: Links to docs, GitHub, PyPI
 
 ## Maintenance
 
