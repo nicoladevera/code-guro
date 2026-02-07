@@ -7,6 +7,44 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.5.0] - 2026-02-07
+
+### Added
+- **Interactive Setup Wizard**: Provider selection menu with descriptions and pricing
+  - Secure API key input with masking during entry
+  - Immediate validation with friendly error messages
+  - Secure storage in `~/.config/code-guro/config.json` with 0o600 permissions
+  - Config schema v2 with `api_keys` and `preferences` sections
+  - Backward compatibility with environment variable fallback
+- **Smart Defaults**: Zero-argument `code-guro` command for current directory analysis
+  - Auto-detects and previews current project
+  - Dry-run mode for fast cost estimation without full file reads
+  - Welcome flow for first-time users
+  - Edge case handling: home directory warnings, empty directories, recent analysis detection
+- **Improved Console Output**: Milestone-based progress tracking with optional emojis
+  - Progress indicators with emojis (📊, ✓, ⏳, 📄, 🌐) and `--no-emoji` flag
+  - Time estimates based on token count for operations
+  - Organized document summaries with clear next steps
+  - Progress callbacks in analyzer and generator for real-time updates
+- **Emoji Preference Storage**: User preference for emoji display persisted in config
+- **Warning Suppression**: Filtered noisy dependency warnings for cleaner user experience
+  - Suppresses FutureWarning from Google libraries and urllib3
+  - Suppresses OpenSSL-related warnings
+  - Only hides warnings users cannot act on
+
+### Changed
+- **Setup Flow**: `code-guro configure` success message now recommends simpler `code-guro` command
+- **API Key Retrieval**: All providers now check config file before environment variables
+- **Config Management**: Enhanced with per-provider API key storage and user preferences
+
+### Fixed
+- **API Key Reconfiguration Bug**: Fixed issue where declining to use existing API key would still validate the old key instead of prompting for a new one
+
+### Documentation
+- Added comprehensive Phase 1 UX improvements section to AGENTS.md
+- Updated README.md Quick Start guide for new interactive setup flow
+- Updated UX improvement roadmap with Phase 1 completion and Phase 2 focus
+
 ## [0.4.2] - 2025-12-31
 
 ### Added
@@ -114,7 +152,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Cost estimation with confirmation for large codebases
 - Secure API key storage in `~/.config/code-guro/`
 
-[Unreleased]: https://github.com/nicoladevera/code-guro/compare/v0.4.2...HEAD
+[Unreleased]: https://github.com/nicoladevera/code-guro/compare/v0.5.0...HEAD
+[0.5.0]: https://github.com/nicoladevera/code-guro/compare/v0.4.2...v0.5.0
 [0.4.2]: https://github.com/nicoladevera/code-guro/compare/v0.4.1...v0.4.2
 [0.4.1]: https://github.com/nicoladevera/code-guro/compare/v0.4.0...v0.4.1
 [0.4.0]: https://github.com/nicoladevera/code-guro/compare/v0.3.1...v0.4.0
