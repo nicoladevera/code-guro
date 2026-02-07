@@ -1055,8 +1055,27 @@
             // Pick the right theme override
             var themeStyle = (effective === 'light') ? LIGHT_OVERRIDE : DARK_OVERRIDE;
 
-            // Inject overrides right before </head>
-            var modified = html.replace('</head>', themeStyle + FIT_OVERRIDE + '</head>');
+            // Script to intercept navigation clicks inside iframe
+            var navigationScript = '<script>' +
+                '(function() {' +
+                '    document.addEventListener("DOMContentLoaded", function() {' +
+                '        document.addEventListener("click", function(e) {' +
+                '            var target = e.target;' +
+                '            while (target && target.tagName !== "A") {' +
+                '                target = target.parentElement;' +
+                '            }' +
+                '            if (target && target.href && target.href.match(/\\.html$/)) {' +
+                '                e.preventDefault();' +
+                '                var filename = target.href.split("/").pop();' +
+                '                window.parent.loadSample(filename);' +
+                '            }' +
+                '        });' +
+                '    });' +
+                '})();' +
+                '<\/script>';
+
+            // Inject overrides and navigation script right before </head>
+            var modified = html.replace('</head>', themeStyle + FIT_OVERRIDE + navigationScript + '</head>');
 
             iframe.srcdoc = modified;
         }
