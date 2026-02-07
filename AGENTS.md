@@ -81,7 +81,9 @@ code-guro/
 │   └── integration/         # Integration tests
 ├── landing/                 # Marketing landing page (tracked in git)
 │   ├── index.html           # Self-contained landing page with inline CSS/JS
-│   └── assets/              # Landing page assets (logos)
+│   ├── assets/              # Landing page assets (logos)
+│   └── samples/             # Sample HTML outputs for landing page preview
+│       └── html/            # Copied from ../samples/html/ for deployment
 ├── assets/                  # Documentation assets (screenshots, images)
 ├── samples/                 # Local reference outputs (git-ignored content)
 │   ├── README.md            # Purpose & regeneration docs (committed)
@@ -472,6 +474,7 @@ from code_guro.cli import main
 
 **Note on tracked directories:**
 - `landing/` - Marketing landing page (intentionally tracked for GitHub Pages deployment)
+  - `landing/samples/html/` - Sample outputs copied for landing page preview (tracked for deployment)
 - `assets/` - Documentation assets like screenshots (intentionally tracked for README)
 
 ### File Filtering Rules (in analyzer.py)
@@ -678,6 +681,7 @@ make quality
 | Modify output format | `src/code_guro/generator.py` |
 | Update HTML conversion | `src/code_guro/html_converter.py` |
 | Update landing page | `landing/index.html` |
+| Update landing samples | Copy from `samples/html/` to `landing/samples/html/` |
 | View sample outputs | `samples/markdown/`, `samples/html/` |
 | Update pre-commit hooks | `.pre-commit-config.yaml` |
 | Add make commands | `Makefile` |
