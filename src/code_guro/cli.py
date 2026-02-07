@@ -2,22 +2,33 @@
 
 import functools
 import sys
+
+# Filter out noisy dependency warnings that users can't act on
+# These are from Google libraries and urllib3, not Code Guro itself
+# Must be after imports but before other code to be effective
+import warnings  # noqa: E402
 from pathlib import Path
 from typing import Callable, Optional
 
-import click
-from rich.console import Console
-from rich.prompt import Prompt
+warnings.filterwarnings("ignore", category=FutureWarning, module="google.*")
+warnings.filterwarnings("ignore", category=FutureWarning, module="urllib3.*")
+warnings.filterwarnings("ignore", message=".*OpenSSL.*")
+warnings.filterwarnings("ignore", message=".*google.generativeai.*")
 
-from code_guro import __version__
-from code_guro.config import (
+import click  # noqa: E402
+from rich.console import Console  # noqa: E402
+from rich.prompt import Prompt  # noqa: E402
+
+from code_guro import __version__  # noqa: E402
+from code_guro.config import (  # noqa: E402
     get_api_key,
+    get_config_file,
     get_provider_config,
     mask_api_key,
     require_provider,
     save_provider_config,
 )
-from code_guro.errors import check_internet_connection, handle_api_error
+from code_guro.errors import check_internet_connection, handle_api_error  # noqa: E402
 
 console = Console()
 
@@ -92,15 +103,168 @@ def require_internet_decorator(f: Callable) -> Callable:
     return wrapper
 
 
-@click.group()
+def handle_zero_argument_flow(ctx):
+    """Handle 'code-guro' with no arguments - smart default behavior."""
+    import time
+
+    from rich.prompt import Confirm
+
+    from code_guro.analyzer import analyze_codebase
+    from code_guro.config import get_preference, is_provider_configured
+    from code_guro.utils import format_cost
+
+    cwd = Path.cwd()
+
+    # Check emoji preference
+    use_emoji = get_preference("emoji_enabled", True)
+
+    console.print()
+    if use_emoji:
+        console.print("[bold]👋 Welcome to Code Guro![/bold]")
+    else:
+        console.print("[bold]Welcome to Code Guro![/bold]")
+    console.print()
+
+    # Check if provider configured
+    if not is_provider_configured():
+        console.print("[yellow]No provider configured yet.[/yellow]")
+        console.print()
+        if Confirm.ask("Would you like to configure Code Guro now?"):
+            ctx.invoke(configure)
+            console.print()
+            console.print("Great! Now let's analyze your project.")
+            console.print()
+        else:
+            console.print()
+            console.print(
+                "Run [bold cyan]code-guro configure[/bold cyan] when you're ready to set up."
+            )
+            console.print()
+            console.print("For more information:")
+            console.print("  [cyan]code-guro --help[/cyan]")
+            sys.exit(0)
+
+    # Check for edge case: home directory
+    if cwd == Path.home():
+        console.print(
+            "[yellow]Warning:[/yellow] You're in your home directory.\n"
+            "This may analyze thousands of files and could be expensive.\n"
+        )
+        if not Confirm.ask("Continue anyway?", default=False):
+            console.print()
+            console.print("[dim]Navigate to a project directory first:[/dim]")
+            console.print("  [cyan]cd /path/to/your/project[/cyan]")
+            console.print("  [cyan]code-guro[/cyan]")
+            console.print()
+            console.print("[dim]Or specify a path:[/dim]")
+            console.print("  [cyan]code-guro analyze /path/to/project[/cyan]")
+            sys.exit(0)
+        console.print()
+
+    # Check if recently analyzed
+    output_dir = cwd / "code-guro-output"
+    if output_dir.exists():
+        try:
+            mtime = output_dir.stat().st_mtime
+            age_hours = (time.time() - mtime) / 3600
+
+            if age_hours < 24:
+                console.print(f"[dim]This project was analyzed {int(age_hours)} hours ago.[/dim]")
+                console.print()
+                if not Confirm.ask("Re-analyze now?", default=True):
+                    console.print()
+                    console.print("[dim]Opening existing documentation...[/dim]")
+                    html_dir = output_dir / "html"
+                    if html_dir.exists():
+                        overview = html_dir / "00-overview.html"
+                        if overview.exists():
+                            console.print(f"[green]Open:[/green] {overview}")
+                    else:
+                        md_dir = (
+                            output_dir / "markdown"
+                            if (output_dir / "markdown").exists()
+                            else output_dir
+                        )
+                        overview = md_dir / "00-overview.md"
+                        if overview.exists():
+                            console.print(f"[green]Open:[/green] {overview}")
+                    sys.exit(0)
+                console.print()
+        except Exception:
+            # Ignore errors checking file modification time
+            pass
+
+    # Run dry-run scan
+    console.print("[dim]Scanning project...[/dim]")
+    console.print()
+
+    try:
+        result = analyze_codebase(str(cwd), show_progress=False, dry_run=True)
+
+        if not result.files and result.total_tokens == 0:
+            # Try to count files another way for better error message
+            file_count = sum(1 for _ in cwd.rglob("*") if _.is_file())
+
+            console.print("[yellow]No analyzable code files found in this directory.[/yellow]\n")
+
+            if file_count > 0:
+                console.print(
+                    f"[dim]Found {file_count} files, but they may be binary, too large, or in ignored directories.[/dim]\n"
+                )
+
+            console.print("Try:")
+            console.print("  • Navigate to a project directory with code files")
+            console.print("  • Specify a different path:")
+            console.print("    [cyan]code-guro analyze /path/to/project[/cyan]")
+            sys.exit(1)
+
+        # Display project preview
+        file_count = result.total_tokens // 200  # Rough estimate from dry-run
+        framework_names = (
+            ", ".join(f.name for f in result.frameworks) if result.frameworks else "None detected"
+        )
+
+        console.print(f"[bold]Found project at:[/bold] {cwd}")
+        if result.frameworks:
+            console.print(f"[bold]Framework detected:[/bold] {framework_names}")
+        console.print(f"[bold]Estimated files:[/bold] ~{file_count} files")
+        console.print(f"[bold]Estimated tokens:[/bold] ~{result.total_tokens:,}")
+        console.print(f"[bold]Estimated cost:[/bold] {format_cost(result.estimated_cost)}")
+        console.print()
+
+        # Confirm analysis
+        if Confirm.ask("Analyze this project?", default=True):
+            console.print()
+            # Invoke analyze command
+            ctx.invoke(analyze, path=str(cwd), markdown_only=False, no_emoji=not use_emoji)
+        else:
+            console.print()
+            console.print("[yellow]Analysis cancelled.[/yellow]")
+            console.print()
+            console.print(
+                "[dim]Run[/dim] [cyan]code-guro analyze <path>[/cyan] [dim]to analyze a specific directory.[/dim]"
+            )
+
+    except Exception as e:
+        console.print(f"[red]Error:[/red] {str(e)}")
+        console.print()
+        console.print("Try running with a specific path:")
+        console.print("  [cyan]code-guro analyze /path/to/project[/cyan]")
+        sys.exit(1)
+
+
+@click.group(invoke_without_command=True)
+@click.pass_context
 @click.version_option(version=__version__, prog_name="code-guro")
-def main():
+def main(ctx):
     """Code Guro - Understand your codebase like a guru.
 
     A CLI tool to help non-technical product managers and AI-native builders
     understand codebases through structured, beginner-friendly documentation.
     """
-    pass
+    # If no subcommand provided, handle zero-argument flow
+    if ctx.invoked_subcommand is None:
+        handle_zero_argument_flow(ctx)
 
 
 @main.command()
@@ -110,9 +274,14 @@ def main():
     is_flag=True,
     help="Generate only markdown files (default: generates both HTML and markdown)",
 )
+@click.option(
+    "--no-emoji",
+    is_flag=True,
+    help="Disable emoji in console output",
+)
 @require_internet_decorator
 @require_api_key_decorator
-def analyze(path: str, markdown_only: bool):
+def analyze(path: str, markdown_only: bool, no_emoji: bool):
     """Analyze a codebase and generate learning documentation.
 
     By default, generates both HTML and markdown files organized in subdirectories.
@@ -129,13 +298,38 @@ def analyze(path: str, markdown_only: bool):
         code-guro analyze https://github.com/user/repo
 
         code-guro analyze . --markdown-only
+
+        code-guro analyze . --no-emoji
     """
+    import time
+
     from code_guro.analyzer import analyze_codebase, confirm_analysis
+    from code_guro.config import get_preference, set_preference
     from code_guro.generator import generate_documentation
     from code_guro.utils import is_github_url
 
+    # Check emoji preference (flag overrides config)
+    if no_emoji:
+        use_emoji = False
+    else:
+        use_emoji = get_preference("emoji_enabled", True)
+
+    # Save preference if explicitly set via flag
+    if no_emoji and get_preference("emoji_enabled") is not False:
+        set_preference("emoji_enabled", False)
+
+    # Progress indicators
+    check_mark = "✓" if use_emoji else "✓"
+    hourglass = "⏳" if use_emoji else "..."
+    chart = "📊" if use_emoji else "*"
+    doc = "📄" if use_emoji else "*"
+    globe = "🌐" if use_emoji else "*"
+
     console.print()
-    console.print("[bold]Code Guro Analysis[/bold]")
+    if use_emoji:
+        console.print(f"[bold]{chart} Understanding your codebase...[/bold]")
+    else:
+        console.print("[bold]Understanding your codebase...[/bold]")
     console.print()
 
     # Validate path
@@ -148,10 +342,37 @@ def analyze(path: str, markdown_only: bool):
             console.print(f"[red]Error:[/red] Not a directory: {path}")
             sys.exit(1)
 
+    # Track milestones
+    milestones = []
+
+    def track_progress(event: str, data: dict):
+        """Progress callback for milestone tracking."""
+        if event == "scan_complete":
+            duration = data.get("duration", 0)
+            file_count = data.get("file_count", 0)
+            milestones.append(
+                (
+                    "scan",
+                    f"{check_mark} Scanned {file_count} files ({duration:.1f} seconds)",
+                )
+            )
+            console.print(milestones[-1][1])
+        elif event == "framework_detected":
+            duration = data.get("duration", 0)
+            frameworks = data.get("frameworks", [])
+            framework_names = ", ".join(f.name for f in frameworks)
+            milestones.append(
+                (
+                    "framework",
+                    f"{check_mark} Detected {framework_names} ({duration:.1f} seconds)",
+                )
+            )
+            console.print(milestones[-1][1])
+
     try:
         # Analyze codebase
-        console.print(f"[dim]Analyzing: {path}[/dim]")
-        result = analyze_codebase(path)
+        analysis_start = time.time()
+        result = analyze_codebase(path, progress_callback=track_progress)
 
         if not result.files:
             console.print(
@@ -167,35 +388,48 @@ def analyze(path: str, markdown_only: bool):
 
         # Generate documentation
         console.print()
+        time.time()
+
+        # Estimate time based on tokens (rough estimate: 1000 tokens per second)
+        estimated_seconds = result.total_tokens / 1000
+        console.print(
+            f"{hourglass} Generating documentation... "
+            f"(~{int(estimated_seconds)} seconds estimated)"
+        )
+
         output_dir = generate_documentation(result, markdown_only=markdown_only)
 
-        # Print summary
+        total_elapsed = time.time() - analysis_start
+
+        console.print(f"{check_mark} Documentation ready! ({int(total_elapsed)} seconds total)")
         console.print()
+
+        # Print summary
         console.print("[bold green]Analysis complete![/bold green]")
         console.print()
 
         if markdown_only:
-            console.print("Generated documentation:")
+            console.print(f"{doc} Generated documents:")
             for f in sorted(output_dir.glob("*.md")):
-                console.print(f"  [cyan]{f.name}[/cyan]")
+                console.print(f"  • [cyan]{f.name}[/cyan]")
             console.print()
             console.print(f"[dim]Open {output_dir}/00-overview.md to start learning![/dim]")
         else:
             # Both formats generated in subdirectories
-            markdown_dir = output_dir / "markdown"
+            output_dir / "markdown"
             html_dir = output_dir / "html"
 
-            md_files = sorted(markdown_dir.glob("*.md"))
-            html_files = sorted(html_dir.glob("*.html"))
-
-            console.print("Directory structure:")
-            console.print(f"  [cyan]{output_dir.name}/[/cyan]")
-            console.print(f"    [cyan]markdown/[/cyan] ({len(md_files)} files)")
-            console.print(f"    [cyan]html/[/cyan] ({len(html_files)} files)")
+            console.print(f"{doc} Generated documentation:")
+            console.print("  • [bold]Overview[/bold] - What your app does")
+            console.print("  • [bold]Getting Oriented[/bold] - File structure explained")
+            console.print("  • [bold]Architecture[/bold] - How it's built")
+            console.print("  • [bold]Core Files[/bold] - The important stuff")
+            console.print("  • [bold]Deep Dives[/bold] - Detailed explanations")
+            console.print("  • [bold]Quality Analysis[/bold] - What's good, what needs attention")
+            console.print("  • [bold]Next Steps[/bold] - Where to explore next")
             console.print()
             console.print(
-                f"[dim]Open {html_dir}/00-overview.html in your browser for the best "
-                "experience![/dim]"
+                f"{globe} [dim]Open {html_dir}/00-overview.html in your browser for the best experience![/dim]"
             )
 
         console.print()
@@ -414,10 +648,17 @@ def explain(path: str, interactive: bool, output: str):
 def configure():
     """Configure Code Guro with your LLM provider.
 
-    This command will prompt you to select a provider and guide you through
-    setting up the API key as an environment variable.
+    This command will guide you through selecting a provider and setting up
+    your API key with interactive prompts and immediate validation.
     """
+    from rich.prompt import Confirm
+
+    from code_guro.config import get_preference, save_api_key_to_config
     from code_guro.providers.factory import get_provider, list_providers
+
+    # Check emoji preference
+    use_emoji = get_preference("emoji_enabled", True)
+    check_mark = "✓" if use_emoji else "✓"
 
     console.print()
     console.print("[bold]Code Guro Configuration[/bold]")
@@ -431,35 +672,61 @@ def configure():
             current_key = current_provider.get_api_key()
             if current_key:
                 console.print(
-                    f"Current provider: [cyan]{current_provider.get_provider_name()}[/cyan]"
+                    f"[dim]Current provider:[/dim] [cyan]{current_provider.get_provider_name()}[/cyan]"
                 )
-                console.print(f"Current API key: [cyan]{mask_api_key(current_key)}[/cyan]")
+                console.print(
+                    f"[dim]Current API key:[/dim] [cyan]{mask_api_key(current_key)}[/cyan]"
+                )
                 console.print()
 
-                change_provider = Prompt.ask(
-                    "Do you want to change the provider?",
-                    choices=["y", "n"],
-                    default="n",
-                )
-                if change_provider != "y":
+                if not Confirm.ask("Would you like to change your configuration?", default=False):
                     console.print("[yellow]Configuration unchanged.[/yellow]")
                     return
+                console.print()
         except Exception:
             # Provider config exists but invalid, allow reconfiguration
             pass
 
-    # Provider selection
-    providers = list_providers()
+    # Provider selection with detailed descriptions
+    providers_info = {
+        "anthropic": {
+            "name": "Anthropic Claude (Claude Sonnet 4)",
+            "best_for": "Code understanding and documentation",
+            "cost": "$3/$15 per million tokens (input/output)",
+            "url": "https://console.anthropic.com",
+        },
+        "openai": {
+            "name": "OpenAI (GPT-4o)",
+            "best_for": "General-purpose code analysis",
+            "cost": "$2.50/$10 per million tokens (input/output)",
+            "url": "https://platform.openai.com",
+        },
+        "google": {
+            "name": "Google Gemini (Gemini 2.0 Flash)",
+            "best_for": "Cost-effective analysis",
+            "cost": "$0.075/$0.30 per million tokens (input/output)",
+            "url": "https://aistudio.google.com",
+        },
+    }
 
-    console.print("Select your LLM provider:")
+    console.print("[bold]Select your LLM provider:[/bold]")
     console.print()
+
+    providers = list_providers()
     for i, provider_id in enumerate(providers, 1):
-        provider = get_provider(provider_id)
-        console.print(f"  {i}. {provider.get_provider_name()}")
-    console.print()
+        info = providers_info.get(provider_id, {})
+        console.print(f"  [bold]{i}. {info.get('name', provider_id)}[/bold]")
+        console.print(f"     [dim]• Best for:[/dim] {info.get('best_for', 'N/A')}")
+        console.print(f"     [dim]• Cost:[/dim] {info.get('cost', 'N/A')}")
+        console.print(f"     [dim]• Get API key:[/dim] {info.get('url', 'N/A')}")
+        console.print()
 
     try:
-        choice = Prompt.ask("Choice", choices=[str(i) for i in range(1, len(providers) + 1)])
+        choice = Prompt.ask(
+            "Enter choice",
+            choices=[str(i) for i in range(1, len(providers) + 1)],
+            default="1",
+        )
         selected_provider_id = providers[int(choice) - 1]
     except (ValueError, IndexError, KeyboardInterrupt):
         console.print("[yellow]Configuration cancelled.[/yellow]")
@@ -467,75 +734,88 @@ def configure():
 
     selected_provider = get_provider(selected_provider_id)
     selected_name = selected_provider.get_provider_name()
-    selected_env_var = selected_provider.get_api_key_env_var()
     selected_url = selected_provider.get_api_key_url()
+
     console.print()
     console.print(f"[bold]Setting up {selected_name}[/bold]")
     console.print()
-    console.print(f"Please set your {selected_name} API key as an environment variable:")
-    console.print()
-    console.print(f'  [cyan]export {selected_env_var}="your-key-here"[/cyan]')
-    console.print()
-    console.print("You can add this to your ~/.zshrc or ~/.bashrc to make it permanent.")
-    console.print()
-    console.print(f"Get your API key at: [link={selected_url}]{selected_url}[/link]")
-    console.print()
 
-    # Get provider instance and validate
-    try:
-        api_key = selected_provider.get_api_key()
+    # Check if API key is already set in environment
+    api_key = selected_provider.get_api_key()
 
-        if not api_key:
-            use_pasted_key = Prompt.ask(
-                f"{selected_env_var} not found. Paste API key now to validate?",
-                choices=["y", "n"],
-                default="n",
-            )
-            if use_pasted_key != "y":
+    if api_key:
+        console.print(f"[dim]Found API key in config or environment: {mask_api_key(api_key)}[/dim]")
+        if Confirm.ask("Use this API key?", default=True):
+            # Validate existing key
+            console.print()
+            console.print("[dim]Validating API key...[/dim]")
+            is_valid, message = selected_provider.validate_api_key(api_key)
+
+            if not is_valid:
+                console.print(f"[red]Error:[/red] {message}")
+                console.print()
+                console.print("Please enter a valid API key below.")
+                api_key = None
+            else:
+                console.print()
+                console.print(f"[green]{check_mark} API key is valid![/green]")
+                save_provider_config(selected_provider_id)
+                console.print(f"[green]{check_mark} Provider saved: {selected_name}[/green]")
                 console.print()
                 console.print(
-                    f"[yellow]Configuration not saved.[/yellow]\n\n"
-                    f"Please set {selected_env_var} and run "
-                    f"[bold cyan]code-guro configure[/bold cyan] again."
+                    "You can now use [bold cyan]code-guro analyze[/bold cyan] to analyze a codebase."
                 )
-                sys.exit(0)
+                return
+        else:
+            # User declined to use existing key - prompt for new one
+            api_key = None
 
-            api_key = Prompt.ask("API key", password=True)
-            if not api_key:
-                console.print("[red]Error:[/red] API key cannot be empty.")
-                sys.exit(1)
-
-        # Validate the key
+    # Prompt for API key input
+    if not api_key:
+        console.print(f"Please enter your {selected_name} API key:")
+        console.print(f"[dim]Get your key at: {selected_url}[/dim]")
         console.print()
-        console.print("[dim]Validating API key...[/dim]")
 
-        is_valid, message = selected_provider.validate_api_key(api_key)
+        api_key = Prompt.ask("API key (will be hidden)", password=True)
 
-        if not is_valid:
-            console.print(f"[red]Error: {message}[/red]")
-            console.print()
-            console.print("Please check your API key and try again.")
+        if not api_key or not api_key.strip():
+            console.print("[red]Error:[/red] API key cannot be empty.")
             sys.exit(1)
 
-        # Save provider selection
-        save_provider_config(selected_provider_id)
+        api_key = api_key.strip()
 
-        console.print()
-        console.print("[green]✓ API key validated successfully![/green]")
-        console.print(f"[green]✓ Provider saved: {selected_name}[/green]")
-        if not selected_provider.get_api_key():
-            console.print(
-                f"[yellow]Note:[/yellow] API keys are not stored by Code Guro.\n"
-                f"Make sure {selected_env_var} is set before running commands."
-            )
-        console.print()
-        console.print(
-            "You can now use [bold cyan]code-guro analyze[/bold cyan] to analyze a codebase."
-        )
+    # Validate the key
+    console.print()
+    console.print("[dim]Validating API key...[/dim]")
 
-    except Exception as e:
-        console.print(f"[red]Error:[/red] {str(e)}")
+    is_valid, message = selected_provider.validate_api_key(api_key)
+
+    if not is_valid:
+        console.print()
+        console.print(f"[red]Error:[/red] {message}")
+        console.print()
+        console.print("Please check your API key and try again.")
+        console.print("Run [bold cyan]code-guro configure[/bold cyan] to retry.")
         sys.exit(1)
+
+    # Save configuration
+    save_provider_config(selected_provider_id)
+    save_api_key_to_config(selected_provider_id, api_key)
+
+    console.print()
+    console.print(
+        f"[green]{check_mark} Success! Your API key is valid and has been saved securely.[/green]"
+    )
+    console.print()
+    console.print(f"[dim]Configuration saved to: {get_config_file()}[/dim]")
+    console.print()
+    console.print("[bold]You're all set![/bold] Try analyzing a project:")
+    console.print("  [cyan]cd /path/to/your/project[/cyan]")
+    console.print("  [cyan]code-guro[/cyan]")
+    console.print()
+    console.print("[dim]Or specify a path explicitly:[/dim]")
+    console.print("  [cyan]code-guro analyze /path/to/project[/cyan]")
+    console.print()
 
 
 if __name__ == "__main__":

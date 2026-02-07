@@ -1,6 +1,7 @@
 """Google Gemini provider implementation."""
 
 import os
+import time
 from typing import Optional, Tuple
 
 try:
@@ -50,13 +51,23 @@ class GeminiProvider(LLMProvider):
         return self.MODEL
 
     def get_api_key(self) -> Optional[str]:
-        """Get the Google API key from environment variables.
+        """Get the Google API key from config file or environment variables.
 
-        Checks GOOGLE_API_KEY first, then GEMINI_API_KEY for backwards compatibility.
+        Priority:
+        1. Config file (~/.config/code-guro/config.json)
+        2. GOOGLE_API_KEY environment variable (standard)
+        3. GEMINI_API_KEY environment variable (backwards compatibility)
 
         Returns:
             API key string or None if not configured
         """
+        # Check config file first
+        from code_guro.config import get_api_key_from_config
+
+        config_key = get_api_key_from_config("google")
+        if config_key:
+            return config_key
+
         # Check GOOGLE_API_KEY (standard)
         key = os.environ.get("GOOGLE_API_KEY")
         if key:
@@ -75,7 +86,7 @@ class GeminiProvider(LLMProvider):
         system: str = "",
         max_tokens: int = 4096,
     ) -> str:
-        """Make a call to the Google Gemini API.
+        """Make a call to the Google Gemini API with automatic retry on rate limits.
 
         Args:
             prompt: The user prompt
@@ -86,7 +97,7 @@ class GeminiProvider(LLMProvider):
             Gemini's response text
 
         Raises:
-            Exception: Various exceptions for API errors
+            Exception: Various exceptions for API errors after all retries
         """
         self._ensure_client_initialized()
 
@@ -98,16 +109,45 @@ class GeminiProvider(LLMProvider):
         # Gemini uses generation_config for max_tokens
         generation_config = genai.types.GenerationConfig(max_output_tokens=max_tokens)
 
-        response = model.generate_content(prompt, generation_config=generation_config)
+        # Retry configuration
+        max_retries = 3
+        base_delay = 5  # Start with 5 seconds
 
-        # Handle response - Gemini returns text directly
-        if hasattr(response, "text"):
-            return response.text
-        elif hasattr(response, "candidates") and response.candidates:
-            # Fallback for different response formats
-            return response.candidates[0].content.parts[0].text
-        else:
-            raise ValueError(f"Unexpected response format: {response}")
+        for attempt in range(max_retries + 1):
+            try:
+                response = model.generate_content(prompt, generation_config=generation_config)
+
+                # Handle response - Gemini returns text directly
+                if hasattr(response, "text"):
+                    return response.text
+                elif hasattr(response, "candidates") and response.candidates:
+                    # Fallback for different response formats
+                    return response.candidates[0].content.parts[0].text
+                else:
+                    raise ValueError(f"Unexpected response format: {response}")
+
+            except Exception as e:
+                error_str = str(e).lower()
+                is_rate_limit = (
+                    "rate" in error_str
+                    or "quota" in error_str
+                    or "429" in error_str
+                    or "resource_exhausted" in error_str
+                )
+
+                if is_rate_limit:
+                    # If this was the last attempt, re-raise the error
+                    if attempt >= max_retries:
+                        raise
+
+                    # Calculate exponential backoff delay
+                    delay = base_delay * (2**attempt)
+
+                    # Wait before retrying
+                    time.sleep(delay)
+                else:
+                    # Not a rate limit error, raise immediately
+                    raise
 
     def validate_api_key(self, api_key: Optional[str] = None) -> Tuple[bool, str]:
         """Validate a Google API key by making a test request.

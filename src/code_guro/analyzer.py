@@ -143,20 +143,30 @@ def is_test_file(path: Path) -> bool:
 def analyze_codebase(
     path: str,
     show_progress: bool = True,
+    progress_callback=None,
+    dry_run: bool = False,
 ) -> AnalysisResult:
     """Analyze a codebase and prepare for documentation generation.
 
     Args:
         path: Path to local directory or GitHub URL
         show_progress: Whether to show progress indicators
+        progress_callback: Optional callback function for progress updates
+        dry_run: If True, only count files and detect framework (no content reading)
 
     Returns:
         AnalysisResult with all analysis data
     """
+    import time
+
     result = AnalysisResult(root=Path(path))
     temp_dir = None
 
     try:
+        # Notify start
+        if progress_callback:
+            progress_callback("scan_start", {"path": path})
+
         # Handle GitHub URLs
         if is_github_url(path):
             with Progress(
@@ -178,6 +188,7 @@ def analyze_codebase(
             raise NotADirectoryError(f"Not a directory: {result.root}")
 
         # Detect frameworks
+        framework_start = time.time()
         if show_progress:
             with Progress(
                 SpinnerColumn(),
@@ -190,16 +201,69 @@ def analyze_codebase(
         else:
             result.frameworks = detect_frameworks(result.root)
 
+        framework_elapsed = time.time() - framework_start
+
         if result.frameworks:
             framework_names = ", ".join(f.name for f in result.frameworks)
-            console.print(f"[green]Detected frameworks:[/green] {framework_names}")
+            if show_progress:
+                console.print(f"[green]Detected frameworks:[/green] {framework_names}")
+
+            # Notify callback
+            if progress_callback:
+                progress_callback(
+                    "framework_detected",
+                    {
+                        "frameworks": result.frameworks,
+                        "duration": framework_elapsed,
+                    },
+                )
 
         # Traverse and analyze files
+        scan_start = time.time()
         if show_progress:
             console.print("[dim]Analyzing files...[/dim]")
 
         files_by_extension: Dict[str, int] = {}
 
+        # For dry-run mode, just count files without reading content
+        if dry_run:
+            file_count = 0
+            for filepath in traverse_directory(result.root):
+                if not is_file_too_large(filepath):
+                    file_count += 1
+                    if file_count >= 500:  # Cap at max_files
+                        break
+
+            # Estimate tokens based on file count (rough estimate: 200 tokens per file)
+            result.total_tokens = file_count * 200
+
+            # Get provider for cost estimation
+            from code_guro.providers.factory import get_provider
+
+            try:
+                provider = get_provider()
+                estimated_output = result.total_tokens // 3
+                result.estimated_cost = provider.estimate_cost(
+                    result.total_tokens, estimated_output
+                )
+            except Exception:
+                # If provider not configured, use rough estimate
+                result.estimated_cost = (result.total_tokens / 1_000_000) * 3.0
+
+            scan_elapsed = time.time() - scan_start
+
+            if progress_callback:
+                progress_callback(
+                    "scan_complete",
+                    {
+                        "file_count": file_count,
+                        "duration": scan_elapsed,
+                    },
+                )
+
+            return result
+
+        # Full scan (non-dry-run)
         for filepath in traverse_directory(result.root):
             relative = str(filepath.relative_to(result.root))
 
@@ -236,6 +300,18 @@ def analyze_codebase(
             # Track extensions
             ext = filepath.suffix.lower() or "(no extension)"
             files_by_extension[ext] = files_by_extension.get(ext, 0) + 1
+
+        scan_elapsed = time.time() - scan_start
+
+        # Notify callback
+        if progress_callback:
+            progress_callback(
+                "scan_complete",
+                {
+                    "file_count": len(result.files),
+                    "duration": scan_elapsed,
+                },
+            )
 
         # Check if chunking is needed
         if result.total_tokens > SAFE_CONTEXT_TOKENS:

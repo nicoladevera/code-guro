@@ -1,6 +1,7 @@
 """Anthropic Claude provider implementation."""
 
 import os
+import time
 from typing import Optional, Tuple
 
 import anthropic
@@ -29,13 +30,23 @@ class AnthropicProvider(LLMProvider):
         return self.MODEL
 
     def get_api_key(self) -> Optional[str]:
-        """Get the Anthropic API key from environment variables.
+        """Get the Anthropic API key from config file or environment variables.
 
-        Checks CLAUDE_API_KEY first (backwards compatibility), then ANTHROPIC_API_KEY.
+        Priority:
+        1. Config file (~/.config/code-guro/config.json)
+        2. CLAUDE_API_KEY environment variable (backwards compatibility)
+        3. ANTHROPIC_API_KEY environment variable (standard)
 
         Returns:
             API key string or None if not configured
         """
+        # Check config file first
+        from code_guro.config import get_api_key_from_config
+
+        config_key = get_api_key_from_config("anthropic")
+        if config_key:
+            return config_key
+
         # Check CLAUDE_API_KEY for backwards compatibility
         key = os.environ.get("CLAUDE_API_KEY")
         if key:
@@ -54,7 +65,7 @@ class AnthropicProvider(LLMProvider):
         system: str = "",
         max_tokens: int = 4096,
     ) -> str:
-        """Make a call to the Anthropic Claude API.
+        """Make a call to the Anthropic Claude API with automatic retry on rate limits.
 
         Args:
             prompt: The user prompt
@@ -66,7 +77,7 @@ class AnthropicProvider(LLMProvider):
 
         Raises:
             anthropic.AuthenticationError: If API key is invalid
-            anthropic.RateLimitError: If rate limited
+            anthropic.RateLimitError: If rate limited after all retries
             anthropic.APIConnectionError: If connection fails
         """
         api_key = self.get_api_key()
@@ -77,14 +88,31 @@ class AnthropicProvider(LLMProvider):
 
         client = anthropic.Anthropic(api_key=api_key)
 
-        message = client.messages.create(
-            model=self.MODEL,
-            max_tokens=max_tokens,
-            system=system,
-            messages=[{"role": "user", "content": prompt}],
-        )
+        # Retry configuration
+        max_retries = 3
+        base_delay = 5  # Start with 5 seconds
 
-        return message.content[0].text
+        for attempt in range(max_retries + 1):
+            try:
+                message = client.messages.create(
+                    model=self.MODEL,
+                    max_tokens=max_tokens,
+                    system=system,
+                    messages=[{"role": "user", "content": prompt}],
+                )
+
+                return message.content[0].text
+
+            except anthropic.RateLimitError:
+                # If this was the last attempt, re-raise the error
+                if attempt >= max_retries:
+                    raise
+
+                # Calculate exponential backoff delay
+                delay = base_delay * (2**attempt)
+
+                # Wait before retrying
+                time.sleep(delay)
 
     def validate_api_key(self, api_key: Optional[str] = None) -> Tuple[bool, str]:
         """Validate an Anthropic API key by making a test request.

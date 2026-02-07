@@ -1,6 +1,7 @@
 """OpenAI GPT-4o provider implementation."""
 
 import os
+import time
 from typing import Optional, Tuple
 
 import openai
@@ -29,11 +30,23 @@ class OpenAIProvider(LLMProvider):
         return self.MODEL
 
     def get_api_key(self) -> Optional[str]:
-        """Get the OpenAI API key from environment variables.
+        """Get the OpenAI API key from config file or environment variables.
+
+        Priority:
+        1. Config file (~/.config/code-guro/config.json)
+        2. OPENAI_API_KEY environment variable
 
         Returns:
             API key string or None if not configured
         """
+        # Check config file first
+        from code_guro.config import get_api_key_from_config
+
+        config_key = get_api_key_from_config("openai")
+        if config_key:
+            return config_key
+
+        # Fall back to environment variable
         return os.environ.get("OPENAI_API_KEY")
 
     def call(
@@ -42,7 +55,7 @@ class OpenAIProvider(LLMProvider):
         system: str = "",
         max_tokens: int = 4096,
     ) -> str:
-        """Make a call to the OpenAI API.
+        """Make a call to the OpenAI API with automatic retry on rate limits.
 
         Args:
             prompt: The user prompt
@@ -54,7 +67,7 @@ class OpenAIProvider(LLMProvider):
 
         Raises:
             openai.AuthenticationError: If API key is invalid
-            openai.RateLimitError: If rate limited
+            openai.RateLimitError: If rate limited after all retries
             openai.APIConnectionError: If connection fails
         """
         api_key = self.get_api_key()
@@ -71,13 +84,30 @@ class OpenAIProvider(LLMProvider):
             messages.append({"role": "system", "content": system})
         messages.append({"role": "user", "content": prompt})
 
-        response = client.chat.completions.create(
-            model=self.MODEL,
-            max_tokens=max_tokens,
-            messages=messages,
-        )
+        # Retry configuration
+        max_retries = 3
+        base_delay = 5  # Start with 5 seconds
 
-        return response.choices[0].message.content
+        for attempt in range(max_retries + 1):
+            try:
+                response = client.chat.completions.create(
+                    model=self.MODEL,
+                    max_tokens=max_tokens,
+                    messages=messages,
+                )
+
+                return response.choices[0].message.content
+
+            except openai.RateLimitError:
+                # If this was the last attempt, re-raise the error
+                if attempt >= max_retries:
+                    raise
+
+                # Calculate exponential backoff delay
+                delay = base_delay * (2**attempt)
+
+                # Wait before retrying
+                time.sleep(delay)
 
     def validate_api_key(self, api_key: Optional[str] = None) -> Tuple[bool, str]:
         """Validate an OpenAI API key by making a test request.

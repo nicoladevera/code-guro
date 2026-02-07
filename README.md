@@ -62,6 +62,7 @@ code-guro --version
 **Note:** If you have multiple installations (user-level, venv, system-wide), you may need to upgrade each separately or uninstall duplicates. Run `which code-guro` to see which installation is being used.
 
 **What's new in recent versions:**
+- **v0.5.0** (Phase 1 UX Improvements) - Interactive setup wizard, smart defaults for zero-argument invocation, improved console output with emojis and milestones, secure API key storage in config file
 - **v0.4.2** - Added logo branding to HTML output, fixed Mermaid diagram syntax errors
 - **v0.4.1** - Fixed version string display issue (hotfix for v0.4.0)
 - **v0.4.0** - Left sidebar navigation, improved dark mode for Mermaid diagrams, enhanced mobile UX
@@ -80,9 +81,14 @@ See [CHANGELOG.md](CHANGELOG.md) for detailed release notes.
 code-guro configure
 ```
 
-You'll be prompted to select a provider (Anthropic Claude, OpenAI GPT-4o, or Google Gemini) and guided through setting up your API key as an environment variable.
+You'll be prompted to select a provider (Anthropic Claude, OpenAI GPT-4o, or Google Gemini) and guided through:
+1. Selecting your preferred provider with cost and use-case information
+2. Entering your API key (will be hidden as you type)
+3. Immediate validation to ensure the key works
 
-**Setting up API keys:**
+Your API key will be stored securely in `~/.config/code-guro/config.json` with file permissions set to 0o600 (readable only by you).
+
+**Alternative: Environment variables** (still supported for backwards compatibility and CI/CD):
 
 For **Anthropic Claude**:
 ```bash
@@ -99,10 +105,19 @@ For **Google Gemini**:
 export GOOGLE_API_KEY="your-api-key-here"
 ```
 
-You can add these to your `~/.zshrc` or `~/.bashrc` to make them permanent. The provider selection is stored in `~/.config/code-guro/config.json` (API keys are never stored on disk for security).
+You can add these to your `~/.zshrc` or `~/.bashrc` to make them permanent.
 
 ### 2. Analyze a codebase
 
+**Simplest way** (new in Phase 1):
+```bash
+cd /path/to/your/project
+code-guro
+```
+
+Code Guro will automatically detect your project, show a preview (files, frameworks, estimated cost), and ask for confirmation before analyzing.
+
+**Explicit path**:
 ```bash
 # Analyze current directory (generates both HTML and markdown)
 code-guro analyze .
