@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Code Guro — Understand Any Codebase</title>
+    <title>Code Guro | Understand Any Codebase With AI</title>
     <meta name="description" content="AI-powered codebase documentation for product managers and non-technical builders. Generate beautiful, structured learning guides from any repository.">
     <meta name="theme-color" content="#1a1a2e" media="(prefers-color-scheme: light)">
     <meta name="theme-color" content="#0f0f1a" media="(prefers-color-scheme: dark)">
@@ -249,6 +249,14 @@
             margin: 0 auto 2.5rem;
             line-height: 1.7;
             animation: fadeUp 0.8s ease 0.2s both;
+        }
+
+        .hero .subtitle-audience {
+            display: block;
+            margin-top: 0.5rem;
+            font-size: clamp(0.82rem, 1.4vw, 0.9rem);
+            color: var(--accent-secondary);
+            letter-spacing: 0.02em;
         }
 
         /* ─── CTAs ─── */
@@ -761,12 +769,11 @@
     <section class="hero">
         <div class="container">
             <div class="hero-inner">
-                <h1>Understand any codebase,<br><span class="accent">without reading code</span></h1>
+                <h1>Understand any codebase<br><span class="accent">without reading code</span></h1>
 
                 <p class="subtitle">
-                    AI-powered documentation that turns complex repositories into structured,
-                    beginner-friendly learning guides. Built for product managers, founders,
-                    and anyone who needs to understand the tech.
+                    AI-powered documentation that turns complex repositories into beginner-friendly learning guides.
+                    <span class="subtitle-audience">Built for PMs and AI-native builders.</span>
                 </p>
 
                 <div class="cta-group">
@@ -838,7 +845,7 @@
             <div class="features-grid">
                 <div class="feature-card reveal">
                     <span class="feature-icon" aria-hidden="true">{&nbsp;}</span>
-                    <h3>Multi-Part Structured Curriculum</h3>
+                    <h3>Multi-Part Curriculum</h3>
                     <p>From high-level overview to deep-dive analysis, get a complete picture organized the way you'd want to learn it.</p>
                 </div>
                 <div class="feature-card reveal" style="transition-delay: 0.1s">
@@ -1144,6 +1151,7 @@
         }, { threshold: 0.15 });
 
         reveals.forEach(function(el) { observer.observe(el); });
+
     </script>
 
 </body>
