@@ -35,7 +35,7 @@ pip install code-guro
 - Internet connection (for LLM API calls)
 - API key from one of the supported providers:
   - **Anthropic Claude**: [console.anthropic.com](https://console.anthropic.com)
-  - **OpenAI GPT-4o**: [platform.openai.com/api-keys](https://platform.openai.com/api-keys)
+  - **OpenAI GPT**: [platform.openai.com/api-keys](https://platform.openai.com/api-keys)
   - **Google Gemini**: [aistudio.google.com/app/apikey](https://aistudio.google.com/app/apikey)
 
 ## Upgrading
@@ -81,7 +81,7 @@ See [CHANGELOG.md](CHANGELOG.md) for detailed release notes.
 code-guro configure
 ```
 
-You'll be prompted to select a provider (Anthropic Claude, OpenAI GPT-4o, or Google Gemini) and guided through:
+You'll be prompted to select a provider (Anthropic, OpenAI, or Google) and guided through:
 1. Selecting your preferred provider with cost and use-case information
 2. Entering your API key (will be hidden as you type)
 3. Immediate validation to ensure the key works
@@ -109,7 +109,7 @@ You can add these to your `~/.zshrc` or `~/.bashrc` to make them permanent.
 
 ### 2. Analyze a codebase
 
-**Simplest way** (new in Phase 1):
+**Simplest way**:
 ```bash
 cd /path/to/your/project
 code-guro
