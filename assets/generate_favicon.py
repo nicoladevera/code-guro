@@ -35,7 +35,8 @@ def create_favicon():
     # - Left/right margins: ~10px each side
 
     # Crop to the icon only (removing text and excess margins)
-    crop_box = (10, 8, width - 10, 75)  # (left, top, right, bottom)
+    # Adjusted coordinates to properly center the icon vertically
+    crop_box = (10, 13, width - 10, 77)  # (left, top, right, bottom)
     img_cropped = img.crop(crop_box)
     print(f"Cropped size: {img_cropped.size}")
 
