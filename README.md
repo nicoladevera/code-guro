@@ -351,7 +351,7 @@ Files larger than 1MB are skipped to avoid excessive API costs. This is typicall
 
 Ensure the repository URL is correct and the repository is public. Private repositories are not currently supported.
 
-## Development
+## Development (For Forkers)
 
 ### Setup
 
@@ -420,9 +420,15 @@ The pre-commit hooks will:
 
 MIT
 
-## Contributing
+## Project Status
 
-Contributions are welcome! See [CONTRIBUTING.md](CONTRIBUTING.md) for development guidelines, code style, and the release process.
+Code Guro is a personal project maintained by [@nicoladevera](https://github.com/nicoladevera). The code is public and open source (MIT license), but I'm not accepting pull requests at this time.
+
+- **Bug reports**: Please open a GitHub Issue
+- **Forking**: Encouraged! Build your own variant if you need different features
+- **Development docs**: See [CONTRIBUTING.md](CONTRIBUTING.md) for setup and code quality guidelines
+
+For context on this approach, see the project philosophy in [CONTRIBUTING.md](CONTRIBUTING.md).
 
 ## Acknowledgments
 
