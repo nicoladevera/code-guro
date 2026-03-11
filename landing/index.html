@@ -692,6 +692,80 @@
             height: 28px;
         }
 
+        /* ─── FAQ ─── */
+
+        .faq {
+            padding: 5rem 0;
+        }
+
+        .faq h2 {
+            text-align: center;
+            font-family: 'Fraunces', serif;
+            font-size: 2rem;
+            margin-bottom: 2.5rem;
+        }
+
+        .faq-list {
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+            max-width: 760px;
+            margin: 0 auto;
+        }
+
+        .faq-item {
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-md);
+            padding: 0;
+            overflow: hidden;
+        }
+
+        .faq-item summary {
+            padding: 1.25rem 1.5rem;
+            font-weight: 600;
+            font-size: 1rem;
+            cursor: pointer;
+            list-style: none;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            color: var(--text-primary);
+            transition: color 0.2s;
+        }
+
+        .faq-item summary::-webkit-details-marker { display: none; }
+
+        .faq-item summary::after {
+            content: '+';
+            font-size: 1.25rem;
+            font-weight: 400;
+            color: var(--text-muted);
+            transition: transform 0.2s;
+            flex-shrink: 0;
+            margin-left: 1rem;
+        }
+
+        .faq-item[open] summary::after {
+            content: '−';
+        }
+
+        .faq-item p {
+            padding: 0 1.5rem 1.25rem;
+            margin: 0;
+            color: var(--text-secondary);
+            line-height: 1.7;
+            font-size: 0.95rem;
+        }
+
+        .faq-item code {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.85em;
+            background: var(--bg-code);
+            padding: 0.15em 0.4em;
+            border-radius: 4px;
+        }
+
         /* ─── Footer ─── */
 
         .footer {
@@ -945,6 +1019,35 @@
                         <span>Google</span>
                     </div>
                 </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- ─── FAQ ─── -->
+    <section class="faq">
+        <div class="container">
+            <h2 class="reveal">Frequently Asked Questions</h2>
+            <div class="faq-list">
+                <details class="faq-item reveal">
+                    <summary>Do I need to know how to code to use Code Guro?</summary>
+                    <p>Not at all. Code Guro is built for people who don't read code fluently. Just install it with <code>pip install code-guro</code>, run the setup wizard, and point it at your project. It generates a structured, beginner-friendly curriculum that explains your codebase in plain language &mdash; no programming knowledge required.</p>
+                </details>
+                <details class="faq-item reveal" style="transition-delay: 0.1s">
+                    <summary>Which AI provider should I choose?</summary>
+                    <p>Code Guro supports LLMs from Anthropic, OpenAI, and Google. Claude is recommended for the best code understanding. Gemini is the most cost-effective option at a fraction of the price. You can switch providers anytime by running <code>code-guro configure</code>.</p>
+                </details>
+                <details class="faq-item reveal" style="transition-delay: 0.2s">
+                    <summary>How much does it cost?</summary>
+                    <p>Code Guro itself is free and open source. You only pay for the AI API calls. A small project (10&ndash;50 files) typically costs $0.05&ndash;$0.30, while a large project (200+ files) may cost $1&ndash;$5. Code Guro always shows you an estimated cost before running and asks for confirmation if it exceeds $1.</p>
+                </details>
+                <details class="faq-item reveal" style="transition-delay: 0.3s">
+                    <summary>What kind of output do I get?</summary>
+                    <p>You get a 7-part learning guide covering everything from a high-level overview to deep dives into core files. Output comes in both HTML (with navigation sidebar, dark mode, and diagrams) and Markdown formats. Think of it as a personalized course built around your specific codebase.</p>
+                </details>
+                <details class="faq-item reveal" style="transition-delay: 0.4s">
+                    <summary>Can I analyze a GitHub repository I don't have locally?</summary>
+                    <p>Yes! Just pass a public GitHub URL directly: <code>code-guro analyze https://github.com/user/repo</code>. Code Guro will clone it and generate the documentation for you.</p>
+                </details>
             </div>
         </div>
     </section>
